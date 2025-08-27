@@ -106,6 +106,60 @@
           </div>
         </div>
       </div>
+
+      <!-- API Information -->
+      <div class="mt-16">
+        <h2 class="text-3xl font-bold text-gray-900 text-center mb-8">API Endpoints</h2>
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+              <div class="p-4 bg-green-50 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-mono">POST</span>
+                  <span class="ml-2 font-mono text-sm">/api/login</span>
+                </div>
+                <p class="text-sm text-gray-600">Đăng nhập bằng chữ ký wallet</p>
+              </div>
+              
+              <div class="p-4 bg-blue-50 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <span class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-mono">GET</span>
+                  <span class="ml-2 font-mono text-sm">/api/profile</span>
+                </div>
+                <p class="text-sm text-gray-600">Lấy thông tin profile user</p>
+              </div>
+            </div>
+            
+            <div class="space-y-4">
+              <div class="p-4 bg-yellow-50 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <span class="bg-yellow-500 text-white px-2 py-1 rounded text-xs font-mono">PUT</span>
+                  <span class="ml-2 font-mono text-sm">/api/profile</span>
+                </div>
+                <p class="text-sm text-gray-600">Cập nhật thông tin profile</p>
+              </div>
+              
+              <div class="p-4 bg-purple-50 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <span class="bg-purple-500 text-white px-2 py-1 rounded text-xs font-mono">GET</span>
+                  <span class="ml-2 font-mono text-sm">/api/health</span>
+                </div>
+                <p class="text-sm text-gray-600">Kiểm tra trạng thái server</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h4 class="font-semibold text-gray-900 mb-2">Thông tin kỹ thuật:</h4>
+            <ul class="text-sm text-gray-600 space-y-1">
+              <li>• <strong>Backend:</strong> Spring Boot + MySQL</li>
+              <li>• <strong>Web3 Integration:</strong> Ethereum signature verification</li>
+              <li>• <strong>Frontend:</strong> Vue.js 3 + TailwindCSS</li>
+              <li>• <strong>API Response:</strong> Chuẩn REST với ResponseDTO wrapper</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

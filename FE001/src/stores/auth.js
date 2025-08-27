@@ -93,10 +93,14 @@ export const useAuthStore = defineStore('auth', {
           signature: signature
         })
 
-        this.user = response.data.user
-        this.isConnected = true
+        // Backend trả về ResponseDTO với structure: { status, message, data }
+        if (response.data && response.data.data) {
+          this.user = response.data.data.user
+          this.walletAddress = response.data.data.wallet_address || this.walletAddress
+          this.isConnected = true
+        }
 
-        return response.data
+        return response.data.data
       } catch (error) {
         this.error = error.response?.data?.message || error.message
         throw error
@@ -122,8 +126,12 @@ export const useAuthStore = defineStore('auth', {
           params: { address: this.walletAddress }
         })
 
-        this.user = response.data
-        return response.data
+        // Backend trả về ResponseDTO với structure: { status, message, data }
+        if (response.data && response.data.data) {
+          this.user = response.data.data
+        }
+
+        return response.data.data
       } catch (error) {
         this.error = error.response?.data?.message || error.message
         throw error
@@ -135,13 +143,23 @@ export const useAuthStore = defineStore('auth', {
         this.isLoading = true
         this.error = null
 
-        const response = await axios.put(`${API_BASE_URL}/profile`, {
+        // Map field names to match backend DTO
+        const requestData = {
           address: this.walletAddress,
-          ...profileData
-        })
+          username: profileData.username,
+          email: profileData.email,
+          avatarUrl: profileData.avatar_url,
+          bio: profileData.bio
+        }
 
-        this.user = response.data
-        return response.data
+        const response = await axios.put(`${API_BASE_URL}/profile`, requestData)
+
+        // Backend trả về ResponseDTO với structure: { status, message, data }
+        if (response.data && response.data.data) {
+          this.user = response.data.data
+        }
+
+        return response.data.data
       } catch (error) {
         this.error = error.response?.data?.message || error.message
         throw error

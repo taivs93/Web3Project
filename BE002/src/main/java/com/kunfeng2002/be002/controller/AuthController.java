@@ -5,6 +5,7 @@ import com.kunfeng2002.be002.dto.response.LoginResponse;
 import com.kunfeng2002.be002.dto.request.UpdateProfileRequest;
 import com.kunfeng2002.be002.dto.response.UserDto;
 import com.kunfeng2002.be002.service.AuthService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.security.SignatureException;
+
+import com.kunfeng2002.be002.dto.response.ResponseDTO;
 
 @RestController
 @RequestMapping("")
@@ -55,19 +58,18 @@ public class AuthController {
 
 
     @PutMapping("/profile")
-    public ResponseEntity<UserDto> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
-        try {
-            UserDto updatedUser = authService.updateUserProfile(
-                    request.getAddress(),
-                    request.getUsername(),
-                    request.getEmail(),
-                    request.getAvatarUrl(),
-                    request.getBio()
-            );
-            return ResponseEntity.ok(updatedUser);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<ResponseDTO> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        UserDto updatedUser = authService.updateUserProfile(
+                request.getAddress(),
+                request.getUsername(),
+                request.getEmail(),
+                request.getAvatarUrl(),
+                request.getBio());
+        return ResponseEntity.ok(ResponseDTO.builder()
+                .status(200)
+                .data(updatedUser)
+                .message("Update user profile successfully")
+                .build());
     }
 
     @GetMapping("/health")

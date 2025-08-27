@@ -74,6 +74,29 @@
         <div class="bg-white shadow rounded-lg p-6">
           <h2 class="text-lg font-semibold text-gray-900 mb-6">Thông tin cá nhân</h2>
           
+          <!-- Avatar Preview -->
+          <div v-if="form.avatar_url" class="mb-6 text-center">
+            <img 
+              :src="form.avatar_url" 
+              alt="Avatar Preview" 
+              class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-gray-200"
+              @error="avatarError = true"
+            >
+            <p v-if="avatarError" class="text-red-500 text-sm mt-2">Không thể tải avatar</p>
+          </div>
+
+          <!-- Current User Info Display -->
+          <div v-if="authStore.user" class="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h3 class="text-sm font-medium text-gray-700 mb-3">Thông tin hiện tại:</h3>
+            <div class="space-y-2 text-sm">
+              <div><span class="font-medium">ID:</span> {{ authStore.user.id || 'Chưa có' }}</div>
+              <div><span class="font-medium">Tên người dùng:</span> {{ authStore.user.username || 'Chưa có' }}</div>
+              <div><span class="font-medium">Email:</span> {{ authStore.user.email || 'Chưa có' }}</div>
+              <div><span class="font-medium">Ngày tạo:</span> {{ formatDate(authStore.user.created_at) }}</div>
+              <div><span class="font-medium">Đăng nhập cuối:</span> {{ formatDate(authStore.user.last_login_at) }}</div>
+            </div>
+          </div>
+          
           <form @submit.prevent="updateProfile" class="space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -107,6 +130,7 @@
                 type="url"
                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="https://example.com/avatar.jpg"
+                @input="avatarError = false"
               />
             </div>
 
@@ -143,18 +167,22 @@
         <!-- User Stats -->
         <div class="bg-white shadow rounded-lg p-6">
           <h2 class="text-lg font-semibold text-gray-900 mb-4">Thống kê</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="text-center">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="text-center p-4 bg-indigo-50 rounded-lg">
               <div class="text-2xl font-bold text-indigo-600">{{ userStats.createdDays }}</div>
               <div class="text-sm text-gray-600">Ngày tham gia</div>
             </div>
-            <div class="text-center">
+            <div class="text-center p-4 bg-green-50 rounded-lg">
               <div class="text-2xl font-bold text-green-600">{{ userStats.lastLoginDays }}</div>
               <div class="text-sm text-gray-600">Ngày đăng nhập cuối</div>
             </div>
-            <div class="text-center">
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
               <div class="text-2xl font-bold text-purple-600">{{ userStats.isActive ? 'Hoạt động' : 'Không hoạt động' }}</div>
               <div class="text-sm text-gray-600">Trạng thái</div>
+            </div>
+            <div class="text-center p-4 bg-yellow-50 rounded-lg">
+              <div class="text-2xl font-bold text-yellow-600">{{ authStore.user?.id || 'N/A' }}</div>
+              <div class="text-sm text-gray-600">User ID</div>
             </div>
           </div>
         </div>
@@ -178,6 +206,8 @@ const form = ref({
   bio: ''
 })
 
+const avatarError = ref(false)
+
 // Computed properties
 const userStats = computed(() => {
   if (!authStore.user) return { createdDays: 0, lastLoginDays: 0, isActive: false }
@@ -194,6 +224,11 @@ const userStats = computed(() => {
 })
 
 // Methods
+const formatDate = (dateString) => {
+  if (!dateString) return 'Chưa có'
+  return new Date(dateString).toLocaleString('vi-VN')
+}
+
 const copyAddress = async () => {
   try {
     await navigator.clipboard.writeText(authStore.walletAddress)
@@ -222,6 +257,7 @@ const resetForm = () => {
       bio: authStore.user.bio || ''
     }
   }
+  avatarError.value = false
 }
 
 const logout = () => {
@@ -238,6 +274,7 @@ watch(() => authStore.user, (newUser) => {
       avatar_url: newUser.avatar_url || '',
       bio: newUser.bio || ''
     }
+    avatarError.value = false
   }
 }, { immediate: true })
 

@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ResponseDTO> handleSignatureException(SignatureException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 ResponseDTO.builder()
-                        .status(HttpStatus.UNAUTHORIZED.value()) // Sửa từ 404 thành 401
+                        .status(HttpStatus.UNAUTHORIZED.value())
                         .message("Invalid signature: " + ex.getMessage())
                         .build()
         );
