@@ -1,0 +1,153 @@
+import { defineStore } from 'pinia'
+import { ethers } from 'ethers'
+import axios from 'axios'
+
+const API_BASE_URL = 'http://localhost:8080/api'
+
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    user: null,
+    walletAddress: null,
+    isConnected: false,
+    isLoading: false,
+    error: null
+  }),
+
+  getters: {
+    isAuthenticated: (state) => !!state.user && !!state.walletAddress,
+    shortAddress: (state) => {
+      if (!state.walletAddress) return ''
+      return `${state.walletAddress.slice(0, 6)}...${state.walletAddress.slice(-4)}`
+    }
+  },
+
+  actions: {
+    async connectWallet() {
+      try {
+        this.isLoading = true
+        this.error = null
+
+        // Kiểm tra MetaMask
+        if (!window.ethereum) {
+          throw new Error('MetaMask không được cài đặt!')
+        }
+
+        // Yêu cầu kết nối
+        const accounts = await window.ethereum.request({
+          method: 'eth_requestAccounts'
+        })
+
+        if (accounts.length === 0) {
+          throw new Error('Không có tài khoản nào được chọn!')
+        }
+
+        this.walletAddress = accounts[0]
+        this.isConnected = true
+
+        return accounts[0]
+      } catch (error) {
+        this.error = error.message
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async signMessage(message) {
+      try {
+        if (!this.walletAddress) {
+          throw new Error('Chưa kết nối ví!')
+        }
+
+        const provider = new ethers.BrowserProvider(window.ethereum)
+        const signer = await provider.getSigner()
+
+        const signature = await signer.signMessage(message)
+        return signature
+      } catch (error) {
+        this.error = error.message
+        throw error
+      }
+    },
+
+    async login() {
+      try {
+        this.isLoading = true
+        this.error = null
+
+        // Kết nối ví nếu chưa kết nối
+        if (!this.walletAddress) {
+          await this.connectWallet()
+        }
+
+        // Tạo message để sign
+        const message = `ssdsdsdsdsdsdsdssdsdsdsdsdsdsdsdhsdkjasgjkfoksahf\nTimestamp: ${Date.now()}`
+
+        // Sign message
+        const signature = await this.signMessage(message)
+
+        // Gửi request đăng nhập
+        const response = await axios.post(`${API_BASE_URL}/login`, {
+          address: this.walletAddress,
+          message: message,
+          signature: signature
+        })
+
+        this.user = response.data.user
+        this.isConnected = true
+
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.message || error.message
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async logout() {
+      this.user = null
+      this.walletAddress = null
+      this.isConnected = false
+      this.error = null
+    },
+
+    async getUserProfile() {
+      try {
+        if (!this.walletAddress) {
+          throw new Error('Chưa kết nối ví!')
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/profile`, {
+          params: { address: this.walletAddress }
+        })
+
+        this.user = response.data
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.message || error.message
+        throw error
+      }
+    },
+
+    async updateProfile(profileData) {
+      try {
+        this.isLoading = true
+        this.error = null
+
+        const response = await axios.put(`${API_BASE_URL}/profile`, {
+          address: this.walletAddress,
+          ...profileData
+        })
+
+        this.user = response.data
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.message || error.message
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    }
+  }
+})
