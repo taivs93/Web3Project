@@ -27,14 +27,14 @@ public class TelegramBotService {
         try {
 
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(bot);
+//            Bot bot = new Bot();
+            botsApi.registerBot(new Bot());
+            // bot.sendText(user.getId(), "Hello World!");
 
         } catch (TelegramApiException e) {
             System.err.println("Telegram API Error: " + e.getMessage());
-            System.err.println("Error details: " + e.toString());
         } catch (Exception e) {
             System.err.println("Failed to start Telegram Bot: " + e.getMessage());
-            System.err.println("Error details: " + e.toString());
         }
     }
 }
