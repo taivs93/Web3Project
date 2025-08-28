@@ -8,6 +8,8 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     walletAddress: null,
+    tokenBalance: null,
+    tokenInfo: null,
     isConnected: false,
     isLoading: false,
     error: null
@@ -80,8 +82,13 @@ export const useAuthStore = defineStore('auth', {
           await this.connectWallet()
         }
 
-        // Tạo message để sign
-        const message = `ssdsdsdsdsdsdsdssdsdsdsdsdsdsdsdhsdkjasgjkfoksahf\nTimestamp: ${Date.now()}`
+        // Lấy nonce từ server
+        const nonceResponse = await axios.get(`${API_BASE_URL}/nonce`, {
+          params: { address: this.walletAddress }
+        })
+
+        const nonce = nonceResponse.data.data
+        const message = `Dang nhap voi Web3 Auth\nNonce: ${nonce}\nTimestamp: ${Date.now()}`
 
         // Sign message
         const signature = await this.signMessage(message)
@@ -112,6 +119,8 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       this.user = null
       this.walletAddress = null
+      this.tokenBalance = null
+      this.tokenInfo = null
       this.isConnected = false
       this.error = null
     },
@@ -148,7 +157,6 @@ export const useAuthStore = defineStore('auth', {
           address: this.walletAddress,
           username: profileData.username,
           email: profileData.email,
-          avatarUrl: profileData.avatar_url,
           bio: profileData.bio
         }
 
@@ -165,6 +173,57 @@ export const useAuthStore = defineStore('auth', {
         throw error
       } finally {
         this.isLoading = false
+      }
+    },
+
+    async getTokenBalance() {
+      try {
+        if (!this.walletAddress) {
+          throw new Error('Chưa kết nối ví!')
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/token-balance`, {
+          params: { address: this.walletAddress }
+        })
+
+        if (response.data && response.data.data) {
+          const balance = response.data.data
+          // Chuyển đổi scientific notation thành số thường
+          const numBalance = parseFloat(balance)
+          if (numBalance === 0) {
+            this.tokenBalance = '0'
+          } else {
+            // Format số để tránh scientific notation
+            this.tokenBalance = numBalance.toFixed(8).replace(/\.?0+$/, '')
+          }
+        }
+
+        return response.data.data
+      } catch (error) {
+        console.error('Error getting token balance:', error)
+        this.tokenBalance = null
+        throw error
+      }
+    },
+
+    async getTokenInfo() {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/token-info`)
+
+        if (response.data && response.data.data) {
+          this.tokenInfo = response.data.data
+        }
+
+        return response.data.data
+      } catch (error) {
+        console.error('Error getting token info:', error)
+        this.tokenInfo = {
+          symbol: 'TOKEN',
+          name: 'Unknown Token',
+          address: '0x38439B0252751032FB223c5EF3DE75f619d9E55b',
+          network: 'BSC Testnet'
+        }
+        throw error
       }
     }
   }

@@ -57,6 +57,28 @@
               </div>
             </div>
             <div>
+              <label class="block text-sm font-medium text-gray-700">Số dư Token</label>
+              <div class="mt-1 flex items-center">
+                <span class="text-lg font-bold" :class="getTokenBalanceColor()">
+                  {{ getTokenBalanceDisplay() }}
+                </span>
+                <span class="ml-2 text-sm text-gray-500">{{ getTokenSymbol() }}</span>
+                <button
+                  @click="refreshTokenBalance"
+                  class="ml-2 text-indigo-600 hover:text-indigo-500"
+                  title="Làm mới số dư"
+                  :disabled="isLoadingBalance"
+                >
+                  <svg class="w-4 h-4" :class="{ 'animate-spin': isLoadingBalance }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="text-xs text-gray-500 mt-1">
+                {{ getTokenFullInfo() }}
+              </div>
+            </div>
+            <div>
               <label class="block text-sm font-medium text-gray-700">Trạng thái</label>
               <div class="mt-1">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -74,17 +96,6 @@
         <div class="bg-white shadow rounded-lg p-6">
           <h2 class="text-lg font-semibold text-gray-900 mb-6">Thông tin cá nhân</h2>
           
-          <!-- Avatar Preview -->
-          <div v-if="form.avatar_url" class="mb-6 text-center">
-            <img 
-              :src="form.avatar_url" 
-              alt="Avatar Preview" 
-              class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-gray-200"
-              @error="avatarError = true"
-            >
-            <p v-if="avatarError" class="text-red-500 text-sm mt-2">Không thể tải avatar</p>
-          </div>
-
           <!-- Current User Info Display -->
           <div v-if="authStore.user" class="mb-6 p-4 bg-gray-50 rounded-lg">
             <h3 class="text-sm font-medium text-gray-700 mb-3">Thông tin hiện tại:</h3>
@@ -92,8 +103,7 @@
               <div><span class="font-medium">ID:</span> {{ authStore.user.id || 'Chưa có' }}</div>
               <div><span class="font-medium">Tên người dùng:</span> {{ authStore.user.username || 'Chưa có' }}</div>
               <div><span class="font-medium">Email:</span> {{ authStore.user.email || 'Chưa có' }}</div>
-              <div><span class="font-medium">Ngày tạo:</span> {{ formatDate(authStore.user.created_at) }}</div>
-              <div><span class="font-medium">Đăng nhập cuối:</span> {{ formatDate(authStore.user.last_login_at) }}</div>
+              <div><span class="font-medium">Địa chỉ ví:</span> {{ authStore.walletAddress }}</div>
             </div>
           </div>
           
@@ -122,19 +132,7 @@
               </div>
             </div>
 
-            <div>
-              <label for="avatar" class="block text-sm font-medium text-gray-700">URL Avatar</label>
-              <input
-                id="avatar"
-                v-model="form.avatar_url"
-                type="url"
-                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="https://example.com/avatar.jpg"
-                @input="avatarError = false"
-              />
-            </div>
-
-            <div>
+            <div class="col-span-2">
               <label for="bio" class="block text-sm font-medium text-gray-700">Giới thiệu</label>
               <textarea
                 id="bio"
@@ -166,23 +164,21 @@
 
         <!-- User Stats -->
         <div class="bg-white shadow rounded-lg p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Thống kê</h2>
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Thống kê đơn giản</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="text-center p-4 bg-indigo-50 rounded-lg">
-              <div class="text-2xl font-bold text-indigo-600">{{ userStats.createdDays }}</div>
-              <div class="text-sm text-gray-600">Ngày tham gia</div>
+              <div class="text-2xl font-bold text-indigo-600">{{ authStore.user?.id || 'N/A' }}</div>
+              <div class="text-sm text-gray-600">User ID</div>
             </div>
             <div class="text-center p-4 bg-green-50 rounded-lg">
-              <div class="text-2xl font-bold text-green-600">{{ userStats.lastLoginDays }}</div>
-              <div class="text-sm text-gray-600">Ngày đăng nhập cuối</div>
+              <div class="text-2xl font-bold" :class="getTokenBalanceColor()">
+                {{ getTokenBalanceDisplay() }}
+              </div>
+              <div class="text-sm text-gray-600">Token Balance</div>
             </div>
             <div class="text-center p-4 bg-purple-50 rounded-lg">
-              <div class="text-2xl font-bold text-purple-600">{{ userStats.isActive ? 'Hoạt động' : 'Không hoạt động' }}</div>
+              <div class="text-2xl font-bold text-purple-600">Hoạt động</div>
               <div class="text-sm text-gray-600">Trạng thái</div>
-            </div>
-            <div class="text-center p-4 bg-yellow-50 rounded-lg">
-              <div class="text-2xl font-bold text-yellow-600">{{ authStore.user?.id || 'N/A' }}</div>
-              <div class="text-sm text-gray-600">User ID</div>
             </div>
           </div>
         </div>
@@ -202,32 +198,12 @@ const authStore = useAuthStore()
 const form = ref({
   username: '',
   email: '',
-  avatar_url: '',
   bio: ''
 })
 
-const avatarError = ref(false)
-
-// Computed properties
-const userStats = computed(() => {
-  if (!authStore.user) return { createdDays: 0, lastLoginDays: 0, isActive: false }
-  
-  const now = new Date()
-  const created = new Date(authStore.user.created_at)
-  const lastLogin = authStore.user.last_login_at ? new Date(authStore.user.last_login_at) : null
-  
-  return {
-    createdDays: Math.floor((now - created) / (1000 * 60 * 60 * 24)),
-    lastLoginDays: lastLogin ? Math.floor((now - lastLogin) / (1000 * 60 * 60 * 24)) : 0,
-    isActive: authStore.user.is_active
-  }
-})
+const isLoadingBalance = ref(false)
 
 // Methods
-const formatDate = (dateString) => {
-  if (!dateString) return 'Chưa có'
-  return new Date(dateString).toLocaleString('vi-VN')
-}
 
 const copyAddress = async () => {
   try {
@@ -253,16 +229,54 @@ const resetForm = () => {
     form.value = {
       username: authStore.user.username || '',
       email: authStore.user.email || '',
-      avatar_url: authStore.user.avatar_url || '',
       bio: authStore.user.bio || ''
     }
   }
-  avatarError.value = false
 }
 
 const logout = () => {
   authStore.logout()
   router.push('/')
+}
+
+const refreshTokenBalance = async () => {
+  try {
+    isLoadingBalance.value = true
+    await authStore.getTokenBalance()
+  } catch (error) {
+    console.error('Lỗi khi làm mới số dư token:', error)
+  } finally {
+    isLoadingBalance.value = false
+  }
+}
+
+const getTokenBalanceDisplay = () => {
+  if (authStore.tokenBalance === null) {
+    return 'N/A'
+  }
+  return authStore.tokenBalance
+}
+
+const getTokenBalanceColor = () => {
+  if (authStore.tokenBalance === null) {
+    return 'text-gray-400'
+  }
+  const numBalance = parseFloat(authStore.tokenBalance)
+  if (numBalance === 0) {
+    return 'text-orange-600' // Màu cam cho số 0
+  }
+  return 'text-green-600' // Màu xanh cho số > 0
+}
+
+const getTokenSymbol = () => {
+  return authStore.tokenInfo?.symbol || 'TOKEN'
+}
+
+const getTokenFullInfo = () => {
+  if (!authStore.tokenInfo) {
+    return 'BSC Testnet - Token: 0x38439B0252751032FB223c5EF3DE75f619d9E55b'
+  }
+  return `${authStore.tokenInfo.network} - ${authStore.tokenInfo.name} (${authStore.tokenInfo.symbol})`
 }
 
 // Watch for user changes and update form
@@ -271,10 +285,8 @@ watch(() => authStore.user, (newUser) => {
     form.value = {
       username: newUser.username || '',
       email: newUser.email || '',
-      avatar_url: newUser.avatar_url || '',
       bio: newUser.bio || ''
     }
-    avatarError.value = false
   }
 }, { immediate: true })
 
@@ -293,6 +305,19 @@ onMounted(async () => {
       console.error('Lỗi tải profile:', error)
       router.push('/login')
     }
+  }
+
+  // Load token info and balance
+  try {
+    await authStore.getTokenInfo()
+  } catch (error) {
+    console.error('Lỗi tải token info:', error)
+  }
+  
+  try {
+    await authStore.getTokenBalance()
+  } catch (error) {
+    console.error('Lỗi tải token balance:', error)
   }
 })
 </script>
