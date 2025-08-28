@@ -1,18 +1,21 @@
 package com.kunfeng2002.be002.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class LoginRequest {
 
-    @NotBlank(message = "Địa chỉ ví không được để trống")
+    @Size(min = 42, max = 42, message = "Address must have length 42")
     private String address;
 
-    @NotBlank(message = "Thông điệp không được để trống")
+    @NotBlank(message = "Message must not be null")
     private String message;
 
-    @NotBlank(message = "Chữ ký không được để trống")
+    @Size(min = 130, max = 130, message = "Signature must have length 130")
     private String signature;
 }
 

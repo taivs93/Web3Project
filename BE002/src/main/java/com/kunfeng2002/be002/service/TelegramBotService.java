@@ -25,12 +25,10 @@ public class TelegramBotService {
     @EventListener(ApplicationReadyEvent.class)
     public void startBot() {
         try {
-            System.out.println("Starting Telegram Bot...");
-            // Khởi tạo và đăng ký bot
+
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(bot);
-            
-            System.out.println("Telegram Bot started successfully with Long Polling mode.");
+
         } catch (TelegramApiException e) {
             System.err.println("Telegram API Error: " + e.getMessage());
             System.err.println("Error details: " + e.toString());

@@ -61,8 +61,8 @@ public class AuthService {
     }
 
     public UserDto getUserByAddress(String address) {
-        Optional<User> user = userRepository.findByWalletAddressQuery(address);
-        return user.map(this::convertToDto).orElse(null);
+        User user = userRepository.findByWalletAddressQuery(address).orElseThrow(() -> new DataNotFoundException("User not found."));
+        return this.convertToDto(user);
     }
 
 
@@ -78,7 +78,6 @@ public class AuthService {
             }
             user.setUsername(username);
         }
-
         if (email != null && !email.equals(user.getEmail())) {
             if (userRepository.existsByEmail(email)) {
                 throw new ResourceAlreadyExistException("Email has already used");

@@ -33,10 +33,6 @@ public class Web3Service {
             if (signature.length() != 130) {
                 throw new SignatureException("Invalid signature length: " + signature.length());
             }
-            
-            System.out.println("Verifying signature for address: " + address);
-            System.out.println("Signature: " + signature);
-            System.out.println("Message: " + message);
 
             boolean web3jResult = verifyWithWeb3j(message, signature, address);
             if (web3jResult) {
@@ -48,7 +44,6 @@ public class Web3Service {
         } catch (SignatureException e) {
             throw e;
         } catch (Exception e) {
-            System.err.println("Error verifying signature: " + e.getMessage());
             e.printStackTrace();
             throw new SignatureException("Signature verification failed: " + e.getMessage());
         }
@@ -60,15 +55,11 @@ public class Web3Service {
             String prefixedMessage = prefix + message;
 
             byte[] messageHash = Hash.sha3(prefixedMessage.getBytes(StandardCharsets.UTF_8));
-            System.out.println("Message hash: " + Numeric.toHexString(messageHash));
 
             byte[] signatureBytes = Numeric.hexStringToByteArray(signature);
-
             if (signatureBytes.length != 65) {
-                System.out.println("Invalid signature bytes length: " + signatureBytes.length);
-                return false;
+                throw new SignatureException("Invalid signature bytes length: " + signatureBytes.length);
             }
-            
             byte[] r = new byte[32];
             byte[] s = new byte[32];
             System.arraycopy(signatureBytes, 0, r, 0, 32);
@@ -76,7 +67,6 @@ public class Web3Service {
 
             int v = signatureBytes[64] & 0xFF;
             System.out.println("Original v: " + v);
-
             int recoveryId = v >= 27 ? v - 27 : v;
 
             if (recoveryId >= 0 && recoveryId <= 3) {
@@ -102,8 +92,6 @@ public class Web3Service {
                     BigInteger publicKey = Sign.signedMessageToKey(messageHash, sigData);
                     String recoveredAddress = "0x" + Keys.getAddress(publicKey);
                     
-                    System.out.println("Fallback: Recovered address with recoveryId " + i + ": " + recoveredAddress);
-                    
                     if (recoveredAddress.equalsIgnoreCase(address)) {
                         return true;
                     }
@@ -124,13 +112,11 @@ public class Web3Service {
             String prefix = "\u0019Ethereum Signed Message:\n" + message.length();
             String prefixedMessage = prefix + message;
             byte[] messageHash = keccak256(prefixedMessage.getBytes(StandardCharsets.UTF_8));
-            System.out.println("BC Message hash: " + Numeric.toHexString(messageHash));
 
             byte[] signatureBytes = Numeric.hexStringToByteArray(signature);
             
             if (signatureBytes.length != 65) {
-                System.out.println("BC: Invalid signature bytes length: " + signatureBytes.length);
-                return false;
+                throw new SignatureException("Invalid signature byte length");
             }
             
             byte[] r = new byte[32];
@@ -217,7 +203,6 @@ public class Web3Service {
             for (int i = 1; i < 33; i++) {
                 encoded[i] = 0;
             }
-            
             System.arraycopy(xBytes, srcPos, encoded, destPos, bytesToCopy);
             
             return curve.decodePoint(encoded);
