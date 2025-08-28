@@ -75,8 +75,12 @@ public class AuthController {
     }
 
     @GetMapping("/nonce")
-    public String getNonce(@RequestParam String address) {
+    public ResponseEntity<ResponseDTO> getNonce(@RequestParam String address) {
         String nonce = authService.getNonce(address);
-        return nonce;
+        return ResponseEntity.ok(ResponseDTO.builder()
+                        .message("Get nonce successfully")
+                        .status(200)
+                        .data(nonce)
+                .build());
     }
 }
