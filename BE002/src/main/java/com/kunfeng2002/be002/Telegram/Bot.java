@@ -9,7 +9,10 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        System.out.println("Hello, I'm KunFeng's bot!");
+        var msg = update.getMessage();
+        var user = msg.getFrom();
+
+        System.out.println(user.getFirstName() + " wrote " + msg.getText());
     }
 
     @Override

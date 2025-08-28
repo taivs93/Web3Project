@@ -30,3 +30,6 @@ CREATE TABLE wallets (
 
 ALTER TABLE users
   ADD CONSTRAINT users_ibfk_1 FOREIGN KEY (`wallet_id`) REFERENCES wallets (`id`);
+
+ALTER TABLE wallets
+  ADD COLUMN nonce varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL;

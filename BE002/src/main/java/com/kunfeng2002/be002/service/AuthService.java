@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SignatureException;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,13 +27,24 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(String address, String message, String signature) throws SignatureException {
+        Wallet wallet = walletRepository.findByAddress(address)
+                .orElseThrow(() -> new DataNotFoundException("Wallet not found"));
+
+        if (!message.contains(wallet.getNonce())) {
+            throw new SignatureException("Invalid nonce or replay attack");
+        }
+
         if (!web3Service.verifySignature(message, signature, address)) {
             throw new SignatureException("Invalid signature");
         }
-        Wallet wallet = findOrCreateWallet(address);
+
+        wallet.setNonce(UUID.randomUUID().toString());
+        walletRepository.save(wallet);
+
         User user = findOrCreateUser(wallet);
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
+
         UserDto userDto = convertToDto(user);
         return LoginResponse.builder()
                 .user(userDto)
@@ -107,4 +119,15 @@ public class AuthService {
                 .walletAddress(user.getWallet().getAddress())
                 .build();
     }
+
+    public String getNonce(String address){
+        Wallet wallet = walletRepository.findByAddress(address)
+                .orElseGet(() -> walletRepository.save(new Wallet(address)));
+        String nonce = UUID.randomUUID().toString();
+        wallet.setNonce(nonce);
+        walletRepository.save(wallet);
+
+        return nonce;
+    }
+
 }

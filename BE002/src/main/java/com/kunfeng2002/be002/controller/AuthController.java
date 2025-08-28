@@ -73,4 +73,10 @@ public class AuthController {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Web3 Backend is running!");
     }
+
+    @GetMapping("/nonce")
+    public String getNonce(@RequestParam String address) {
+        String nonce = authService.getNonce(address);
+        return nonce;
+    }
 }

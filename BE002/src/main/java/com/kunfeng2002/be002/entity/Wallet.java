@@ -39,6 +39,9 @@ public class Wallet {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "nonce")
+    private String nonce;
+
     public Wallet(String address) {
         this.address = address;
     }
