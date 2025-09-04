@@ -103,7 +103,7 @@ export const useAuthStore = defineStore('auth', {
         // Backend trả về ResponseDTO với structure: { status, message, data }
         if (response.data && response.data.data) {
           this.user = response.data.data.user
-          this.walletAddress = response.data.data.wallet_address || this.walletAddress
+          this.walletAddress = response.data.data.walletAddress || this.walletAddress
           this.isConnected = true
         }
 
@@ -176,55 +176,6 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async getTokenBalance() {
-      try {
-        if (!this.walletAddress) {
-          throw new Error('Chưa kết nối ví!')
-        }
-
-        const response = await axios.get(`${API_BASE_URL}/token-balance`, {
-          params: { address: this.walletAddress }
-        })
-
-        if (response.data && response.data.data) {
-          const balance = response.data.data
-          // Chuyển đổi scientific notation thành số thường
-          const numBalance = parseFloat(balance)
-          if (numBalance === 0) {
-            this.tokenBalance = '0'
-          } else {
-            // Format số để tránh scientific notation
-            this.tokenBalance = numBalance.toFixed(8).replace(/\.?0+$/, '')
-          }
-        }
-
-        return response.data.data
-      } catch (error) {
-        console.error('Error getting token balance:', error)
-        this.tokenBalance = null
-        throw error
-      }
-    },
-
-    async getTokenInfo() {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/token-info`)
-
-        if (response.data && response.data.data) {
-          this.tokenInfo = response.data.data
-        }
-
-        return response.data.data
-      } catch (error) {
-        console.error('Error getting token info:', error)
-        this.tokenInfo = {
-          symbol: 'TOKEN',
-          name: 'Unknown Token',
-          address: '0x38439B0252751032FB223c5EF3DE75f619d9E55b',
-          network: 'BSC Testnet'
-        }
-        throw error
-      }
-    }
+    // Token methods removed - not available in backend
   }
 })

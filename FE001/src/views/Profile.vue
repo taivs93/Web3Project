@@ -57,25 +57,9 @@
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">Số dư Token</label>
-              <div class="mt-1 flex items-center">
-                <span class="text-lg font-bold" :class="getTokenBalanceColor()">
-                  {{ getTokenBalanceDisplay() }}
-                </span>
-                <span class="ml-2 text-sm text-gray-500">{{ getTokenSymbol() }}</span>
-                <button
-                  @click="refreshTokenBalance"
-                  class="ml-2 text-indigo-600 hover:text-indigo-500"
-                  title="Làm mới số dư"
-                  :disabled="isLoadingBalance"
-                >
-                  <svg class="w-4 h-4" :class="{ 'animate-spin': isLoadingBalance }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                  </svg>
-                </button>
-              </div>
-              <div class="text-xs text-gray-500 mt-1">
-                {{ getTokenFullInfo() }}
+              <label class="block text-sm font-medium text-gray-700">Ngày đăng ký</label>
+              <div class="mt-1">
+                <span class="text-sm text-gray-900">{{ formatDate(authStore.user?.createdAt) }}</span>
               </div>
             </div>
             <div>
@@ -103,6 +87,10 @@
               <div><span class="font-medium">ID:</span> {{ authStore.user.id || 'Chưa có' }}</div>
               <div><span class="font-medium">Tên người dùng:</span> {{ authStore.user.username || 'Chưa có' }}</div>
               <div><span class="font-medium">Email:</span> {{ authStore.user.email || 'Chưa có' }}</div>
+              <div><span class="font-medium">Telegram:</span> 
+                <span v-if="authStore.user.telegramUserId" class="text-blue-600">ID: {{ authStore.user.telegramUserId }}</span>
+                <span v-else class="text-gray-500">Chưa liên kết</span>
+              </div>
               <div><span class="font-medium">Địa chỉ ví:</span> {{ authStore.walletAddress }}</div>
             </div>
           </div>
@@ -129,6 +117,29 @@
                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   placeholder="Nhập email"
                 />
+              </div>
+            </div>
+
+            <!-- Telegram Integration Section -->
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <h3 class="text-sm font-medium text-blue-800 mb-2">🤖 Liên kết Telegram Bot</h3>
+              <p class="text-sm text-blue-700 mb-3">
+                Liên kết tài khoản Telegram để nhận thông báo và chat với bot hỗ trợ.
+              </p>
+              <div class="flex items-center justify-between">
+                <div class="text-xs text-blue-600">
+                  Gửi lệnh: <code class="bg-blue-100 px-2 py-1 rounded">/link_{{ authStore.walletAddress }}</code>
+                </div>
+                <button
+                  type="button"
+                  @click="openTelegramBot"
+                  class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.374 0 0 5.373 0 12s5.374 12 12 12 12-5.373 12-12S18.626 0 12 0zm5.568 8.16c-.169 1.858-.896 6.728-.896 6.728-.896 6.728-1.268 7.893-2.965 7.893-.897 0-1.596-.83-1.596-1.854 0-.896.598-1.567 1.326-2.295.728-.728 1.567-1.326 2.295-1.326.83 0 1.854.699 1.854 1.596 0 1.697-1.165 2.069-7.893 2.965 0 0-4.87.727-6.728.896-1.675.152-2.965-.598-2.965-2.965 0-1.858 1.29-3.117 2.965-2.965z"/>
+                  </svg>
+                  Mở Bot
+                </button>
               </div>
             </div>
 
@@ -171,10 +182,10 @@
               <div class="text-sm text-gray-600">User ID</div>
             </div>
             <div class="text-center p-4 bg-green-50 rounded-lg">
-              <div class="text-2xl font-bold" :class="getTokenBalanceColor()">
-                {{ getTokenBalanceDisplay() }}
+              <div class="text-2xl font-bold text-green-600">
+                {{ authStore.user?.lastLoginAt ? formatDate(authStore.user.lastLoginAt) : 'N/A' }}
               </div>
-              <div class="text-sm text-gray-600">Token Balance</div>
+              <div class="text-sm text-gray-600">Lần đăng nhập cuối</div>
             </div>
             <div class="text-center p-4 bg-purple-50 rounded-lg">
               <div class="text-2xl font-bold text-purple-600">Hoạt động</div>
@@ -184,6 +195,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Chat Widget -->
+    <ChatWidget />
   </div>
 </template>
 
@@ -191,6 +205,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import ChatWidget from '../components/ChatWidget.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -239,44 +254,23 @@ const logout = () => {
   router.push('/')
 }
 
-const refreshTokenBalance = async () => {
-  try {
-    isLoadingBalance.value = true
-    await authStore.getTokenBalance()
-  } catch (error) {
-    console.error('Lỗi khi làm mới số dư token:', error)
-  } finally {
-    isLoadingBalance.value = false
-  }
+const openTelegramBot = () => {
+  // Mở Telegram bot
+  const botUsername = 'buildweb3_bot' // Replace with your actual bot username
+  const telegramUrl = `https://t.me/${botUsername}`
+  window.open(telegramUrl, '_blank')
+  
+  // Hiển thị thông báo
+  alert('🤖 Đang mở Telegram Bot!\n\nGửi /start để bắt đầu và sau đó gửi:\n/link_' + authStore.walletAddress + '\n\nđể liên kết tài khoản Telegram với ví Web3 của bạn.')
 }
 
-const getTokenBalanceDisplay = () => {
-  if (authStore.tokenBalance === null) {
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A'
+  try {
+    return new Date(dateString).toLocaleDateString('vi-VN')
+  } catch (error) {
     return 'N/A'
   }
-  return authStore.tokenBalance
-}
-
-const getTokenBalanceColor = () => {
-  if (authStore.tokenBalance === null) {
-    return 'text-gray-400'
-  }
-  const numBalance = parseFloat(authStore.tokenBalance)
-  if (numBalance === 0) {
-    return 'text-orange-600' // Màu cam cho số 0
-  }
-  return 'text-green-600' // Màu xanh cho số > 0
-}
-
-const getTokenSymbol = () => {
-  return authStore.tokenInfo?.symbol || 'TOKEN'
-}
-
-const getTokenFullInfo = () => {
-  if (!authStore.tokenInfo) {
-    return 'BSC Testnet - Token: 0x38439B0252751032FB223c5EF3DE75f619d9E55b'
-  }
-  return `${authStore.tokenInfo.network} - ${authStore.tokenInfo.name} (${authStore.tokenInfo.symbol})`
 }
 
 // Watch for user changes and update form
@@ -307,17 +301,6 @@ onMounted(async () => {
     }
   }
 
-  // Load token info and balance
-  try {
-    await authStore.getTokenInfo()
-  } catch (error) {
-    console.error('Lỗi tải token info:', error)
-  }
-  
-  try {
-    await authStore.getTokenBalance()
-  } catch (error) {
-    console.error('Lỗi tải token balance:', error)
-  }
+  // Profile loaded successfully
 })
 </script>
