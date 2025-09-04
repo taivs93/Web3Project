@@ -161,9 +161,21 @@
         </div>
       </div>
     </div>
+
+    <!-- Chat Widget only shows when authenticated -->
   </div>
 </template>
 
 <script setup>
-// Component logic here if needed
+// No imports needed for unauthenticated home page
+
+// const openTelegramChat = () => {
+//   // Mở Telegram bot
+//   const botUsername = 'buildweb3_bot'
+//   const telegramUrl = `https://t.me/${botUsername}`
+//   window.open(telegramUrl, '_blank')
+//   
+//   // Hiển thị thông báo
+//   alert('🤖 Đang mở Telegram Bot!\n\nGửi /start để bắt đầu trò chuyện với bot support.')
+// }
 </script>

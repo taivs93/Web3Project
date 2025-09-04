@@ -57,6 +57,12 @@
               </div>
             </div>
             <div>
+              <label class="block text-sm font-medium text-gray-700">Ngày đăng ký</label>
+              <div class="mt-1">
+                <span class="text-sm text-gray-900">{{ formatDate(authStore.user?.createdAt) }}</span>
+              </div>
+            </div>
+            <div>
               <label class="block text-sm font-medium text-gray-700">Trạng thái</label>
               <div class="mt-1">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -74,17 +80,6 @@
         <div class="bg-white shadow rounded-lg p-6">
           <h2 class="text-lg font-semibold text-gray-900 mb-6">Thông tin cá nhân</h2>
           
-          <!-- Avatar Preview -->
-          <div v-if="form.avatar_url" class="mb-6 text-center">
-            <img 
-              :src="form.avatar_url" 
-              alt="Avatar Preview" 
-              class="w-24 h-24 rounded-full mx-auto object-cover border-4 border-gray-200"
-              @error="avatarError = true"
-            >
-            <p v-if="avatarError" class="text-red-500 text-sm mt-2">Không thể tải avatar</p>
-          </div>
-
           <!-- Current User Info Display -->
           <div v-if="authStore.user" class="mb-6 p-4 bg-gray-50 rounded-lg">
             <h3 class="text-sm font-medium text-gray-700 mb-3">Thông tin hiện tại:</h3>
@@ -92,8 +87,11 @@
               <div><span class="font-medium">ID:</span> {{ authStore.user.id || 'Chưa có' }}</div>
               <div><span class="font-medium">Tên người dùng:</span> {{ authStore.user.username || 'Chưa có' }}</div>
               <div><span class="font-medium">Email:</span> {{ authStore.user.email || 'Chưa có' }}</div>
-              <div><span class="font-medium">Ngày tạo:</span> {{ formatDate(authStore.user.created_at) }}</div>
-              <div><span class="font-medium">Đăng nhập cuối:</span> {{ formatDate(authStore.user.last_login_at) }}</div>
+              <div><span class="font-medium">Telegram:</span> 
+                <span v-if="authStore.user.telegramUserId" class="text-blue-600">ID: {{ authStore.user.telegramUserId }}</span>
+                <span v-else class="text-gray-500">Chưa liên kết</span>
+              </div>
+              <div><span class="font-medium">Địa chỉ ví:</span> {{ authStore.walletAddress }}</div>
             </div>
           </div>
           
@@ -122,19 +120,30 @@
               </div>
             </div>
 
-            <div>
-              <label for="avatar" class="block text-sm font-medium text-gray-700">URL Avatar</label>
-              <input
-                id="avatar"
-                v-model="form.avatar_url"
-                type="url"
-                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="https://example.com/avatar.jpg"
-                @input="avatarError = false"
-              />
+            <!-- Telegram Integration Section -->
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <h3 class="text-sm font-medium text-blue-800 mb-2">🤖 Liên kết Telegram Bot</h3>
+              <p class="text-sm text-blue-700 mb-3">
+                Liên kết tài khoản Telegram để nhận thông báo và chat với bot hỗ trợ.
+              </p>
+              <div class="flex items-center justify-between">
+                <div class="text-xs text-blue-600">
+                  Gửi lệnh: <code class="bg-blue-100 px-2 py-1 rounded">/link_{{ authStore.walletAddress }}</code>
+                </div>
+                <button
+                  type="button"
+                  @click="openTelegramBot"
+                  class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.374 0 0 5.373 0 12s5.374 12 12 12 12-5.373 12-12S18.626 0 12 0zm5.568 8.16c-.169 1.858-.896 6.728-.896 6.728-.896 6.728-1.268 7.893-2.965 7.893-.897 0-1.596-.83-1.596-1.854 0-.896.598-1.567 1.326-2.295.728-.728 1.567-1.326 2.295-1.326.83 0 1.854.699 1.854 1.596 0 1.697-1.165 2.069-7.893 2.965 0 0-4.87.727-6.728.896-1.675.152-2.965-.598-2.965-2.965 0-1.858 1.29-3.117 2.965-2.965z"/>
+                  </svg>
+                  Mở Bot
+                </button>
+              </div>
             </div>
 
-            <div>
+            <div class="col-span-2">
               <label for="bio" class="block text-sm font-medium text-gray-700">Giới thiệu</label>
               <textarea
                 id="bio"
@@ -166,28 +175,29 @@
 
         <!-- User Stats -->
         <div class="bg-white shadow rounded-lg p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Thống kê</h2>
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Thống kê đơn giản</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="text-center p-4 bg-indigo-50 rounded-lg">
-              <div class="text-2xl font-bold text-indigo-600">{{ userStats.createdDays }}</div>
-              <div class="text-sm text-gray-600">Ngày tham gia</div>
+              <div class="text-2xl font-bold text-indigo-600">{{ authStore.user?.id || 'N/A' }}</div>
+              <div class="text-sm text-gray-600">User ID</div>
             </div>
             <div class="text-center p-4 bg-green-50 rounded-lg">
-              <div class="text-2xl font-bold text-green-600">{{ userStats.lastLoginDays }}</div>
-              <div class="text-sm text-gray-600">Ngày đăng nhập cuối</div>
+              <div class="text-2xl font-bold text-green-600">
+                {{ authStore.user?.lastLoginAt ? formatDate(authStore.user.lastLoginAt) : 'N/A' }}
+              </div>
+              <div class="text-sm text-gray-600">Lần đăng nhập cuối</div>
             </div>
             <div class="text-center p-4 bg-purple-50 rounded-lg">
-              <div class="text-2xl font-bold text-purple-600">{{ userStats.isActive ? 'Hoạt động' : 'Không hoạt động' }}</div>
+              <div class="text-2xl font-bold text-purple-600">Hoạt động</div>
               <div class="text-sm text-gray-600">Trạng thái</div>
-            </div>
-            <div class="text-center p-4 bg-yellow-50 rounded-lg">
-              <div class="text-2xl font-bold text-yellow-600">{{ authStore.user?.id || 'N/A' }}</div>
-              <div class="text-sm text-gray-600">User ID</div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Chat Widget -->
+    <ChatWidget />
   </div>
 </template>
 
@@ -195,6 +205,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import ChatWidget from '../components/ChatWidget.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -202,32 +213,12 @@ const authStore = useAuthStore()
 const form = ref({
   username: '',
   email: '',
-  avatar_url: '',
   bio: ''
 })
 
-const avatarError = ref(false)
-
-// Computed properties
-const userStats = computed(() => {
-  if (!authStore.user) return { createdDays: 0, lastLoginDays: 0, isActive: false }
-  
-  const now = new Date()
-  const created = new Date(authStore.user.created_at)
-  const lastLogin = authStore.user.last_login_at ? new Date(authStore.user.last_login_at) : null
-  
-  return {
-    createdDays: Math.floor((now - created) / (1000 * 60 * 60 * 24)),
-    lastLoginDays: lastLogin ? Math.floor((now - lastLogin) / (1000 * 60 * 60 * 24)) : 0,
-    isActive: authStore.user.is_active
-  }
-})
+const isLoadingBalance = ref(false)
 
 // Methods
-const formatDate = (dateString) => {
-  if (!dateString) return 'Chưa có'
-  return new Date(dateString).toLocaleString('vi-VN')
-}
 
 const copyAddress = async () => {
   try {
@@ -253,16 +244,33 @@ const resetForm = () => {
     form.value = {
       username: authStore.user.username || '',
       email: authStore.user.email || '',
-      avatar_url: authStore.user.avatar_url || '',
       bio: authStore.user.bio || ''
     }
   }
-  avatarError.value = false
 }
 
 const logout = () => {
   authStore.logout()
   router.push('/')
+}
+
+const openTelegramBot = () => {
+  // Mở Telegram bot
+  const botUsername = 'buildweb3_bot' // Replace with your actual bot username
+  const telegramUrl = `https://t.me/${botUsername}`
+  window.open(telegramUrl, '_blank')
+  
+  // Hiển thị thông báo
+  alert('🤖 Đang mở Telegram Bot!\n\nGửi /start để bắt đầu và sau đó gửi:\n/link_' + authStore.walletAddress + '\n\nđể liên kết tài khoản Telegram với ví Web3 của bạn.')
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A'
+  try {
+    return new Date(dateString).toLocaleDateString('vi-VN')
+  } catch (error) {
+    return 'N/A'
+  }
 }
 
 // Watch for user changes and update form
@@ -271,10 +279,8 @@ watch(() => authStore.user, (newUser) => {
     form.value = {
       username: newUser.username || '',
       email: newUser.email || '',
-      avatar_url: newUser.avatar_url || '',
       bio: newUser.bio || ''
     }
-    avatarError.value = false
   }
 }, { immediate: true })
 
@@ -294,5 +300,7 @@ onMounted(async () => {
       router.push('/login')
     }
   }
+
+  // Profile loaded successfully
 })
 </script>

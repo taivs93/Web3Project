@@ -146,6 +146,8 @@
         </div>
       </div>
     </div>
+
+    <!-- Chat Widget only shows when authenticated -->
   </div>
 </template>
 
@@ -153,6 +155,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+// ChatWidget removed - only shows when authenticated
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -177,6 +180,16 @@ const login = async () => {
     console.error('Lỗi đăng nhập:', error)
   }
 }
+
+// const openTelegramChat = () => {
+//   // Mở Telegram bot
+//   const botUsername = 'buildweb3_bot'
+//   const telegramUrl = `https://t.me/${botUsername}`
+//   window.open(telegramUrl, '_blank')
+//   
+//   // Hiển thị thông báo
+//   alert('🤖 Đang mở Telegram Bot!\n\nGửi /start để được hỗ trợ đăng nhập.')
+// }
 
 onMounted(() => {
   // Kiểm tra nếu đã đăng nhập thì chuyển đến profile

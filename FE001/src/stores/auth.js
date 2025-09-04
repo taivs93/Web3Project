@@ -8,6 +8,8 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     walletAddress: null,
+    tokenBalance: null,
+    tokenInfo: null,
     isConnected: false,
     isLoading: false,
     error: null
@@ -80,8 +82,13 @@ export const useAuthStore = defineStore('auth', {
           await this.connectWallet()
         }
 
-        // Tạo message để sign
-        const message = `ssdsdsdsdsdsdsdssdsdsdsdsdsdsdsdhsdkjasgjkfoksahf\nTimestamp: ${Date.now()}`
+        // Lấy nonce từ server
+        const nonceResponse = await axios.get(`${API_BASE_URL}/nonce`, {
+          params: { address: this.walletAddress }
+        })
+
+        const nonce = nonceResponse.data.data
+        const message = `Dang nhap voi Web3 Auth\nNonce: ${nonce}\nTimestamp: ${Date.now()}`
 
         // Sign message
         const signature = await this.signMessage(message)
@@ -96,7 +103,7 @@ export const useAuthStore = defineStore('auth', {
         // Backend trả về ResponseDTO với structure: { status, message, data }
         if (response.data && response.data.data) {
           this.user = response.data.data.user
-          this.walletAddress = response.data.data.wallet_address || this.walletAddress
+          this.walletAddress = response.data.data.walletAddress || this.walletAddress
           this.isConnected = true
         }
 
@@ -112,6 +119,8 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       this.user = null
       this.walletAddress = null
+      this.tokenBalance = null
+      this.tokenInfo = null
       this.isConnected = false
       this.error = null
     },
@@ -148,7 +157,6 @@ export const useAuthStore = defineStore('auth', {
           address: this.walletAddress,
           username: profileData.username,
           email: profileData.email,
-          avatarUrl: profileData.avatar_url,
           bio: profileData.bio
         }
 
@@ -166,6 +174,8 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.isLoading = false
       }
-    }
+    },
+
+    // Token methods removed - not available in backend
   }
 })

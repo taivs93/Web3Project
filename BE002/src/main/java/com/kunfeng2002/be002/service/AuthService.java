@@ -11,6 +11,7 @@ import com.kunfeng2002.be002.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.UUID;
 
 import java.security.SignatureException;
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ public class AuthService {
     private final Web3Service web3Service;
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
+
 
     @Transactional
     public LoginResponse login(String address, String message, String signature) throws SignatureException {
@@ -104,6 +106,25 @@ public class AuthService {
         }
         User savedUser = userRepository.save(user);
         return convertToDto(savedUser);
+    }
+
+    public String getNonce(String address){
+ 
+        Wallet wallet = walletRepository.findByAddress(address)
+                .orElseGet(() -> {
+                    Wallet newWallet = new Wallet(address);
+                    newWallet.setNonce(UUID.randomUUID().toString());
+                    return walletRepository.save(newWallet);
+                });
+        
+     
+        if (wallet.getNonce() == null) {
+            wallet.setNonce(UUID.randomUUID().toString());
+            walletRepository.save(wallet);
+        }
+        
+
+        return wallet.getNonce();
     }
 
     private UserDto convertToDto(User user) {

@@ -15,7 +15,6 @@ public class LoginRequest {
     @NotBlank(message = "Message must not be null")
     private String message;
 
-    @Size(min = 130, max = 130, message = "Signature must have length 130")
     private String signature;
 }
 
