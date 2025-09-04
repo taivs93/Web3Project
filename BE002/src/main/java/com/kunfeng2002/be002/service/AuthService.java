@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.security.SignatureException;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -139,4 +140,15 @@ public class AuthService {
                 .walletAddress(user.getWallet().getAddress())
                 .build();
     }
+
+    public String getNonce(String address){
+        Wallet wallet = walletRepository.findByAddress(address)
+                .orElseGet(() -> walletRepository.save(new Wallet(address)));
+        String nonce = UUID.randomUUID().toString();
+        wallet.setNonce(nonce);
+        walletRepository.save(wallet);
+
+        return nonce;
+    }
+
 }
