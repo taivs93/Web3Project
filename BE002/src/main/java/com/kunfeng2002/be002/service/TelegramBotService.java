@@ -22,10 +22,8 @@ public class TelegramBotService {
     private final Bot bot;
     private final UserRepository userRepository;
     private final Map<String, Long> userAddressToTelegramId = new HashMap<>();
-    
-    // Store messages from Telegram for web sync
+
     private final Map<String, List<ChatMessageResponse>> telegramToWebMessages = new HashMap<>();
-    
 
     public TelegramBotService(Bot bot, UserRepository userRepository) {
         this.bot = bot;
@@ -55,8 +53,8 @@ public class TelegramBotService {
         if (userAddressToTelegramId.containsKey(userAddress)) {
             Long telegramUserId = userAddressToTelegramId.get(userAddress);
             try {
-                bot.sendText(telegramUserId, "Web Chat: " + message);
-                bot.sendText(telegramUserId, "Bot: " + botResponse);
+                bot.sendText(telegramUserId, "💬 Web Chat: " + message);
+                bot.sendText(telegramUserId, "🤖 Bot: " + botResponse);
                 sentToTelegram = true;
                 telegramMessageId = "sent_" + System.currentTimeMillis();
             } catch (Exception e) {
@@ -117,6 +115,31 @@ public class TelegramBotService {
         return "Re Send!";
     }
 
+//    public void storeTelegramMessage(String userAddress, String message, boolean isFromUser) {
+//        if (!telegramToWebMessages.containsKey(userAddress)) {
+//            telegramToWebMessages.put(userAddress, new ArrayList<>());
+//        }
+//
+//        List<ChatMessageResponse> messages = telegramToWebMessages.get(userAddress);
+//
+//        ChatMessageResponse telegramMessage = ChatMessageResponse.builder()
+//                .message(message)
+//                .botName(isFromUser ? "Telegram User" : "Telegram Bot")
+//                .timestamp(System.currentTimeMillis())
+//                .isBot(!isFromUser)
+//                .sessionId("telegram_sync")
+//                .sentToTelegram(true)
+//                .telegramMessageId("tg_" + System.currentTimeMillis())
+//                .build();
+//
+//        messages.add(telegramMessage);
+//        if (messages.size() > 20) {
+//            messages.remove(0);
+//        }
+//
+//        System.out.println("📱 Stored Telegram message: " + message);
+//    }
+
     public List<ChatMessageResponse> getTelegramMessages(String userAddress) {
         List<ChatMessageResponse> messages = telegramToWebMessages.getOrDefault(userAddress, new ArrayList<>());
         telegramToWebMessages.put(userAddress, new ArrayList<>()); // Clear after reading
@@ -144,7 +167,7 @@ public class TelegramBotService {
             User user = userOpt.get();
             user.setTelegramUserId(telegramUserId);
             userRepository.save(user);
-            
+
             bot.sendText(telegramUserId, "Linked address: " + userAddress);
         } else {
             bot.sendText(telegramUserId, "ERROR: No user found for address " + userAddress);
@@ -182,20 +205,20 @@ public class TelegramBotService {
         return messages;
     }
 
-     public String findWalletIdByTelegramId(Long telegramUserId) {
-         for (Map.Entry<String, Long> entry : userAddressToTelegramId.entrySet()) {
-             if (entry.getValue().equals(telegramUserId)) {
-                 return entry.getKey();
-             }
-         }
+    public String findWalletIdByTelegramId(Long telegramUserId) {
+        for (Map.Entry<String, Long> entry : userAddressToTelegramId.entrySet()) {
+            if (entry.getValue().equals(telegramUserId)) {
+                return entry.getKey();
+            }
+        }
 
-         Optional<User> userOpt = userRepository.findByTelegramUserId(telegramUserId);
-         if (userOpt.isPresent()) {
-             String walletAddress = userOpt.get().getWallet().getAddress();
-             userAddressToTelegramId.put(walletAddress, telegramUserId);
-             return walletAddress;
-         }
+        Optional<User> userOpt = userRepository.findByTelegramUserId(telegramUserId);
+        if (userOpt.isPresent()) {
+            String walletAddress = userOpt.get().getWallet().getAddress();
+            userAddressToTelegramId.put(walletAddress, telegramUserId);
+            return walletAddress;
+        }
 
-         return null;
-     }
+        return null;
+    }
 }
