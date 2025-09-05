@@ -1,23 +1,25 @@
 package com.kunfeng2002.be002.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.beans.factory.annotation.Value;
 
-@Data
+@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ChatMessageResponse {
     
     private String message;
     private String botName;
     private Long timestamp;
+
+    @Value("is_bot")
     private boolean isBot;
+
+    @Value("session_id")
     private String sessionId;
-    
-    // Status của việc gửi tin nhắn
+
+    @Value("sent_to_telegram")
     private boolean sentToTelegram;
+
+    @Value("telegram_message_id")
     private String telegramMessageId;
 }

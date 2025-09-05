@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    @Query(nativeQuery = true, value = "SELECT wallets_id FROM users WHERE telegram_id = :telegramId")
+    @Query(nativeQuery = true, value = "SELECT wallet_id FROM users WHERE telegram_user_id = :telegramId")
     Optional<Long> findWalletIdByTelegramId(@Param("telegramId") Long telegramId);
 
     Optional<User> findByWallet(Wallet wallet);

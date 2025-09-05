@@ -53,12 +53,12 @@ public class TelegramBotService {
         if (userAddressToTelegramId.containsKey(userAddress)) {
             Long telegramUserId = userAddressToTelegramId.get(userAddress);
             try {
-                bot.sendText(telegramUserId, "💬 Web Chat: " + message);
-                bot.sendText(telegramUserId, "🤖 Bot: " + botResponse);
+                bot.sendText(telegramUserId, "Web Chat: " + message);
+                bot.sendText(telegramUserId, "Bot: " + botResponse);
                 sentToTelegram = true;
                 telegramMessageId = "sent_" + System.currentTimeMillis();
-            } catch (Exception e) {
-                System.err.println("Failed to send to Telegram: " + e.getMessage());
+           } catch (Exception e) {
+                System.err.println("Failed to send to  Telegram: " + e.getMessage());
             }
         }
 
@@ -115,34 +115,9 @@ public class TelegramBotService {
         return "Re Send!";
     }
 
-//    public void storeTelegramMessage(String userAddress, String message, boolean isFromUser) {
-//        if (!telegramToWebMessages.containsKey(userAddress)) {
-//            telegramToWebMessages.put(userAddress, new ArrayList<>());
-//        }
-//
-//        List<ChatMessageResponse> messages = telegramToWebMessages.get(userAddress);
-//
-//        ChatMessageResponse telegramMessage = ChatMessageResponse.builder()
-//                .message(message)
-//                .botName(isFromUser ? "Telegram User" : "Telegram Bot")
-//                .timestamp(System.currentTimeMillis())
-//                .isBot(!isFromUser)
-//                .sessionId("telegram_sync")
-//                .sentToTelegram(true)
-//                .telegramMessageId("tg_" + System.currentTimeMillis())
-//                .build();
-//
-//        messages.add(telegramMessage);
-//        if (messages.size() > 20) {
-//            messages.remove(0);
-//        }
-//
-//        System.out.println("📱 Stored Telegram message: " + message);
-//    }
-
     public List<ChatMessageResponse> getTelegramMessages(String userAddress) {
         List<ChatMessageResponse> messages = telegramToWebMessages.getOrDefault(userAddress, new ArrayList<>());
-        telegramToWebMessages.put(userAddress, new ArrayList<>()); // Clear after reading
+        telegramToWebMessages.put(userAddress, new ArrayList<>());
         return messages;
     }
 
@@ -201,7 +176,7 @@ public class TelegramBotService {
 
     public List<ChatMessageResponse> getRecentMessagesForUser(String userAddress) {
         List<ChatMessageResponse> messages = recentTelegramMessages.getOrDefault(userAddress, new ArrayList<>());
-        recentTelegramMessages.put(userAddress, new ArrayList<>()); // Clear after retrieving
+        recentTelegramMessages.put(userAddress, new ArrayList<>());
         return messages;
     }
 

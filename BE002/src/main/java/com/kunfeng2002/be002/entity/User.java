@@ -32,7 +32,7 @@ public class User {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "wallets_id")
+    @JoinColumn(name = "wallet_id")
     private Wallet wallet;
 
     @Column(name = "username")
@@ -41,7 +41,7 @@ public class User {
     @Column(name = "email")
     private String email;
 
-    @Column(name = "id_telegram")
+    @Column(name = "telegram_user_id")
     private Long telegramUserId;
 
     @Column(name = "avatar_url")
