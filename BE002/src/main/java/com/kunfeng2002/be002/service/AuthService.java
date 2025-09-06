@@ -141,14 +141,4 @@ public class AuthService {
                 .build();
     }
 
-    public String getNonce(String address){
-        Wallet wallet = walletRepository.findByAddress(address)
-                .orElseGet(() -> walletRepository.save(new Wallet(address)));
-        String nonce = UUID.randomUUID().toString();
-        wallet.setNonce(nonce);
-        walletRepository.save(wallet);
-
-        return nonce;
-    }
-
 }
