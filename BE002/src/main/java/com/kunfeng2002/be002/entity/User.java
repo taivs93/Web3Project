@@ -64,9 +64,6 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "chat_id")
-    private Long telegramUserId;
-
     public User(Wallet wallet) {
         this.wallet = wallet;
         this.isActive = true;

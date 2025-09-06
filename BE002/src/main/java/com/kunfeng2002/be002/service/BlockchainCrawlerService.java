@@ -6,13 +6,13 @@ import com.kunfeng2002.be002.repository.UserRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
-
 import org.web3j.protocol.http.HttpService;
 import org.web3j.utils.Convert;
 
@@ -35,36 +35,50 @@ public class BlockchainCrawlerService {
     @Autowired
     private Bot bot;
 
+    @Value("${crawler.enabled:true}")
+    private boolean crawlerEnabled;
+
+    @Value("${network.ethereum.rpc-url:}")
+    private String ethereumRpc;
+
+    @Value("${network.bsc.rpc-url:}")
+    private String bscRpc;
+
+    @Value("${network.polygon.rpc-url:}")
+    private String polygonRpc;
+
+    @Value("${network.arbitrum.rpc-url:}")
+    private String arbitrumRpc;
+
+    @Value("${network.optimism.rpc-url:}")
+    private String optimismRpc;
+
+    @Value("${network.avalanche.rpc-url:}")
+    private String avalancheRpc;
+
+    @Value("${network.fantom.rpc-url:}")
+    private String fantomRpc;
+
+    @Value("${network.localhost.rpc-url:}")
+    private String localhostRpc;
+
     private final Map<String, Web3j> web3jInstances = new ConcurrentHashMap<>();
-
-    // Map lưu block number cuối cùng đã crawl cho từng network
     private final Map<String, BigInteger> lastProcessedBlocks = new ConcurrentHashMap<>();
-
-    // Set các địa chỉ ví cần theo dõi
     private final Set<String> watchedAddresses = Collections.synchronizedSet(new HashSet<>());
-
-    // Thread pool để crawl đồng thời nhiều network
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
-
-    // Cấu hình các network cần crawl
-    private static final Map<String, NetworkConfig> NETWORKS = Map.of(
-            "ethereum", new NetworkConfig("Ethereum", "https://mainnet.infura.io/v3/YOUR_INFURA_KEY", 1),
-            "bsc", new NetworkConfig("BSC", "https://bsc-dataseed1.binance.org/", 56),
-            "polygon", new NetworkConfig("Polygon", "https://polygon-rpc.com/", 137),
-            "arbitrum", new NetworkConfig("Arbitrum", "https://arb1.arbitrum.io/rpc", 42161),
-            "optimism", new NetworkConfig("Optimism", "https://mainnet.optimism.io/", 10),
-            "avalanche", new NetworkConfig("Avalanche", "https://api.avax.network/ext/bc/C/rpc", 43114),
-            "fantom", new NetworkConfig("Fantom", "https://rpc.ftm.tools/", 250),
-            "localhost", new NetworkConfig("Localhost", "http://localhost:8545", 1337)
-    );
+    private final Map<String, NetworkConfig> networks = new HashMap<>();
 
     @PostConstruct
     public void initializeCrawler() {
         try {
-            // Khởi tạo Web3j connections cho từng network
+            if (!crawlerEnabled) {
+                System.out.println("Blockchain Crawler is disabled");
+                return;
+            }
+
+
             initializeNetworks();
 
-            // Load danh sách ví cần theo dõi từ database
             loadWatchedAddresses();
 
             System.out.println("Blockchain Crawler initialized successfully");
@@ -75,23 +89,54 @@ public class BlockchainCrawlerService {
     }
 
     private void initializeNetworks() {
-        for (Map.Entry<String, NetworkConfig> entry : NETWORKS.entrySet()) {
-            String networkName = entry.getKey();
-            NetworkConfig config = entry.getValue();
+
+        addNetworkIfConfigured("ethereum", "Ethereum", ethereumRpc, 1);
+        addNetworkIfConfigured("bsc", "BSC", bscRpc, 56);
+        addNetworkIfConfigured("polygon", "Polygon", polygonRpc, 137);
+        addNetworkIfConfigured("arbitrum", "Arbitrum", arbitrumRpc, 42161);
+        addNetworkIfConfigured("optimism", "Optimism", optimismRpc, 10);
+        addNetworkIfConfigured("avalanche", "Avalanche", avalancheRpc, 43114);
+        addNetworkIfConfigured("fantom", "Fantom", fantomRpc, 250);
+        addNetworkIfConfigured("localhost", "Localhost", localhostRpc, 1337);
+    }
+
+    private void addNetworkIfConfigured(String key, String name, String rpcUrl, int chainId) {
+        if (rpcUrl != null && !rpcUrl.trim().isEmpty()) {
+            networks.put(key, new NetworkConfig(name, rpcUrl.trim(), chainId));
 
             try {
-                Web3j web3j = Web3j.build(new HttpService(config.getRpcUrl()));
-                web3jInstances.put(networkName, web3j);
 
-                // Lấy block number hiện tại làm điểm bắt đầu
+                String finalRpcUrl = rpcUrl.trim();
+                if (key.equals("ethereum") && rpcUrl.contains("infura.io")) {
+                    try {
+
+                        Web3j testWeb3j = Web3j.build(new HttpService(finalRpcUrl));
+                        testWeb3j.ethBlockNumber().send().getBlockNumber();
+                        testWeb3j.shutdown();
+                    } catch (Exception e) {
+                        System.err.println("Infura failed, switching to alternative RPC for Ethereum: " + e.getMessage());
+                        finalRpcUrl = "https://rpc.ankr.com/eth";
+                        networks.put(key, new NetworkConfig(name, finalRpcUrl, chainId));
+                    }
+                }
+
+                Web3j web3j = Web3j.build(new HttpService(finalRpcUrl));
+
+
                 BigInteger currentBlock = web3j.ethBlockNumber().send().getBlockNumber();
-                lastProcessedBlocks.put(networkName, currentBlock);
 
-                System.out.println("Connected to " + config.getName() + " - Current block: " + currentBlock);
+                web3jInstances.put(key, web3j);
+                lastProcessedBlocks.put(key, currentBlock);
+
+                System.out.println("Connected to " + name + " - Current block: " + currentBlock);
 
             } catch (Exception e) {
-                System.err.println("Failed to connect to " + config.getName() + ": " + e.getMessage());
+                System.err.println(" Failed to connect to " + name + ": " + e.getMessage());
+
+                networks.remove(key);
             }
+        } else {
+            System.out.println(name + " RPC URL not configured, skipping...");
         }
     }
 
@@ -109,10 +154,11 @@ public class BlockchainCrawlerService {
         }
     }
 
-    // Crawl mỗi 30 giây
     @Scheduled(fixedDelay = 30000)
     @Async
     public void crawlAllNetworks() {
+        if (!crawlerEnabled) return;
+
         for (String networkName : web3jInstances.keySet()) {
             executorService.submit(() -> crawlNetwork(networkName));
         }
@@ -123,11 +169,13 @@ public class BlockchainCrawlerService {
             Web3j web3j = web3jInstances.get(networkName);
             if (web3j == null) return;
 
-            NetworkConfig config = NETWORKS.get(networkName);
+            NetworkConfig config = networks.get(networkName);
+            if (config == null) return;
+
             BigInteger lastBlock = lastProcessedBlocks.get(networkName);
             BigInteger currentBlock = web3j.ethBlockNumber().send().getBlockNumber();
 
-            // Crawl từ block cuối cùng đã xử lý đến block hiện tại
+
             for (BigInteger blockNum = lastBlock.add(BigInteger.ONE);
                  blockNum.compareTo(currentBlock) <= 0;
                  blockNum = blockNum.add(BigInteger.ONE)) {
@@ -135,7 +183,7 @@ public class BlockchainCrawlerService {
                 processBlock(web3j, networkName, config, blockNum);
             }
 
-            // Cập nhật block cuối cùng đã xử lý
+
             lastProcessedBlocks.put(networkName, currentBlock);
 
         } catch (Exception e) {
@@ -174,7 +222,6 @@ public class BlockchainCrawlerService {
             String to = tx.getTo() != null ? tx.getTo().toLowerCase() : "";
             BigInteger value = tx.getValue();
 
-            // Kiểm tra nếu from hoặc to là địa chỉ cần theo dõi
             String watchedAddress = null;
             String direction = "";
 
@@ -187,7 +234,6 @@ public class BlockchainCrawlerService {
             }
 
             if (watchedAddress != null && value.compareTo(BigInteger.ZERO) > 0) {
-                // Tạo transaction notification
                 TransactionNotification notification = TransactionNotification.builder()
                         .networkName(config.getName())
                         .chainId(config.getChainId())
@@ -212,7 +258,6 @@ public class BlockchainCrawlerService {
 
     private void sendTransactionNotification(TransactionNotification notification) {
         try {
-            // Tìm user theo wallet address
             Optional<User> userOpt = userRepository.findByWalletAddressQuery(notification.getWatchedAddress());
 
             if (userOpt.isPresent() && userOpt.get().getTelegramUserId() != null) {
@@ -231,7 +276,7 @@ public class BlockchainCrawlerService {
         BigDecimal ethValue = Convert.fromWei(new BigDecimal(notification.getValue()), Convert.Unit.ETHER);
 
         StringBuilder message = new StringBuilder();
-        message.append("🚨 TRANSACTION ALERT 🚨\n\n");
+        message.append("TRANSACTION ALERT \n\n");
         message.append("Network: ").append(notification.getNetworkName()).append("\n");
         message.append("Direction: ").append(notification.getDirection()).append("\n");
         message.append("Amount: ").append(ethValue.toPlainString()).append(" ETH\n");
@@ -243,7 +288,6 @@ public class BlockchainCrawlerService {
         return message.toString();
     }
 
-    // API để thêm địa chỉ cần theo dõi
     public void addWatchedAddress(String address) {
         if (address != null && address.matches("^0x[a-fA-F0-9]{40}$")) {
             watchedAddresses.add(address.toLowerCase());
@@ -251,13 +295,11 @@ public class BlockchainCrawlerService {
         }
     }
 
-    // API để xóa địa chỉ khỏi danh sách theo dõi
     public void removeWatchedAddress(String address) {
         watchedAddresses.remove(address.toLowerCase());
         System.out.println("Removed address from watch: " + address);
     }
 
-    // API để lấy trạng thái crawler
     public Map<String, Object> getCrawlerStatus() {
         Map<String, Object> status = new HashMap<>();
 
@@ -292,7 +334,7 @@ public class BlockchainCrawlerService {
         }
     }
 
-    // Inner classes
+
     private static class NetworkConfig {
         private final String name;
         private final String rpcUrl;
@@ -326,7 +368,6 @@ public class BlockchainCrawlerService {
             return new TransactionNotificationBuilder();
         }
 
-        // Getters
         public String getNetworkName() { return networkName; }
         public int getChainId() { return chainId; }
         public String getTxHash() { return txHash; }
