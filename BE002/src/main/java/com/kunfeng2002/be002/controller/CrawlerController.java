@@ -6,45 +6,48 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/crawler")
-@CrossOrigin(origins = "*")
 public class CrawlerController {
 
+    private final BlockchainCrawlerService crawlerService;
+
     @Autowired
-    private BlockchainCrawlerService crawlerService;
+    public CrawlerController(BlockchainCrawlerService crawlerService) {
+        this.crawlerService = crawlerService;
+    }
 
-    // API để xem trạng thái crawler
     @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getCrawlerStatus() {
-        try {
-            Map<String, Object> status = crawlerService.getCrawlerStatus();
-            return ResponseEntity.ok(status);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<Map<String, Object>> getStatus() {
+        return ResponseEntity.ok(crawlerService.getCrawlerStatus());
     }
 
-    // API để thêm địa chỉ cần theo dõi
-    @PostMapping("/watch/{address}")
-    public ResponseEntity<String> addWatchedAddress(@PathVariable String address) {
-        try {
-            crawlerService.addWatchedAddress(address);
-            return ResponseEntity.ok("Address added to watch list: " + address);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to add address: " + e.getMessage());
-        }
+    @PostMapping("/watch")
+    public ResponseEntity<String> addAddress(@RequestParam String address) {
+        crawlerService.addWatchedAddress(address);
+        return ResponseEntity.ok("Address added: " + address);
     }
 
-    // API để xóa địa chỉ khỏi danh sách theo dõi
-    @DeleteMapping("/watch/{address}")
-    public ResponseEntity<String> removeWatchedAddress(@PathVariable String address) {
-        try {
-            crawlerService.removeWatchedAddress(address);
-            return ResponseEntity.ok("Address removed from watch list: " + address);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to remove address: " + e.getMessage());
-        }
+    @DeleteMapping("/watch")
+    public ResponseEntity<String> removeAddress(@RequestParam String address) {
+        crawlerService.removeWatchedAddress(address);
+        return ResponseEntity.ok("Address removed: " + address);
+    }
+
+
+    @GetMapping("/watch")
+    public ResponseEntity<Set<String>> listAddresses() {
+        Map<String, Object> status = crawlerService.getCrawlerStatus();
+        int count = (int) status.getOrDefault("watchedAddresses", 0);
+
+        return ResponseEntity.ok(crawlerService.getWatchedAddresses());
+    }
+
+    @PostMapping("/crawl")
+    public ResponseEntity<String> manualCrawl() {
+        crawlerService.crawlAllNetworks();
+        return ResponseEntity.ok("Manual crawl triggered");
     }
 }

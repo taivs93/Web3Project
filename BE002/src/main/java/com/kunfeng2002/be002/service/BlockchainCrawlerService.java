@@ -67,6 +67,9 @@ public class BlockchainCrawlerService {
     private final Set<String> watchedAddresses = Collections.synchronizedSet(new HashSet<>());
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
     private final Map<String, NetworkConfig> networks = new HashMap<>();
+    public Set<String> getWatchedAddresses() {
+        return Collections.unmodifiableSet(watchedAddresses);
+    }
 
     @PostConstruct
     public void initializeCrawler() {
@@ -379,6 +382,7 @@ public class BlockchainCrawlerService {
         public String getDirection() { return direction; }
         public BigInteger getGasPrice() { return gasPrice; }
         public BigInteger getGasUsed() { return gasUsed; }
+
 
         public static class TransactionNotificationBuilder {
             private TransactionNotification notification = new TransactionNotification();
