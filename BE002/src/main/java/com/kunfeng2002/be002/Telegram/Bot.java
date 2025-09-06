@@ -26,17 +26,14 @@ public class Bot extends TelegramLongPollingBot {
     private String botToken;
     private ApplicationContext applicationContext;
     private Map<String, List<ChatMessageResponse>> recentTelegramMessages = new HashMap<>();
-    
-    private TelegramBotService telegramBotService;
 
+    @Autowired
     public Bot(@Value("${telegram.bot.username}") String botUsername,
                @Value("${telegram.bot.token}") String botToken,
-               ApplicationContext applicationContext,
-               TelegramBotService telegramBotService) {
+               ApplicationContext applicationContext) {
         this.botUsername = botUsername;
         this.botToken = botToken;
         this.applicationContext = applicationContext;
-        this.telegramBotService = telegramBotService;
     }
 
     @Override
@@ -72,6 +69,8 @@ public class Bot extends TelegramLongPollingBot {
             }
             return;
         }
+
+        TelegramBotService telegramBotService = applicationContext.getBean(TelegramBotService.class);
 
         String userAddress = telegramBotService.findWalletIdByTelegramId(idTele);
 

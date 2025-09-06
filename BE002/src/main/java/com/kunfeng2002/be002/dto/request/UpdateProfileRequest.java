@@ -1,8 +1,8 @@
 package com.kunfeng2002.be002.dto.request;
 
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter
 public class UpdateProfileRequest {
     private String address;
     private String username;

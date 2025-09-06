@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@Setter
 public class LoginRequest {
 
     @Size(min = 42, max = 42, message = "Address must have length 42")

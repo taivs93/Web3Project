@@ -31,7 +31,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "wallet_id")
     private Wallet wallet;
 
@@ -40,6 +40,9 @@ public class User {
 
     @Column(name = "email")
     private String email;
+
+    @Column(name = "telegram_user_id")
+    private Long telegramUserId;
 
     @Column(name = "avatar_url")
     private String avatarUrl;

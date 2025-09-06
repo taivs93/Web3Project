@@ -11,16 +11,19 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    
+
+    @Query(nativeQuery = true, value = "SELECT wallet_id FROM users WHERE telegram_user_id = :telegramId")
+    Optional<Long> findWalletIdByTelegramId(@Param("telegramId") Long telegramId);
+
     Optional<User> findByWallet(Wallet wallet);
-    
+
     Optional<User> findByWalletAddress(String address);
-    
+
     @Query("SELECT u FROM User u JOIN u.wallet w WHERE w.address = :address")
     Optional<User> findByWalletAddressQuery(@Param("address") String address);
-    
+
     boolean existsByUsername(String username);
-    
+
     boolean existsByEmail(String email);
 
     Optional<User> findByTelegramUserId(Long telegramUserId);

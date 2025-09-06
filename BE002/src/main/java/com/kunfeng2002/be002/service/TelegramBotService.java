@@ -22,10 +22,8 @@ public class TelegramBotService {
     private final Bot bot;
     private final UserRepository userRepository;
     private final Map<String, Long> userAddressToTelegramId = new HashMap<>();
-    
-    // Store messages from Telegram for web sync
+
     private final Map<String, List<ChatMessageResponse>> telegramToWebMessages = new HashMap<>();
-    
 
     public TelegramBotService(Bot bot, UserRepository userRepository) {
         this.bot = bot;
@@ -59,8 +57,8 @@ public class TelegramBotService {
                 bot.sendText(telegramUserId, "Bot: " + botResponse);
                 sentToTelegram = true;
                 telegramMessageId = "sent_" + System.currentTimeMillis();
-            } catch (Exception e) {
-                System.err.println("Failed to send to Telegram: " + e.getMessage());
+           } catch (Exception e) {
+                System.err.println("Failed to send to  Telegram: " + e.getMessage());
             }
         }
 
@@ -119,7 +117,7 @@ public class TelegramBotService {
 
     public List<ChatMessageResponse> getTelegramMessages(String userAddress) {
         List<ChatMessageResponse> messages = telegramToWebMessages.getOrDefault(userAddress, new ArrayList<>());
-        telegramToWebMessages.put(userAddress, new ArrayList<>()); // Clear after reading
+        telegramToWebMessages.put(userAddress, new ArrayList<>());
         return messages;
     }
 
@@ -144,7 +142,7 @@ public class TelegramBotService {
             User user = userOpt.get();
             user.setTelegramUserId(telegramUserId);
             userRepository.save(user);
-            
+
             bot.sendText(telegramUserId, "Linked address: " + userAddress);
         } else {
             bot.sendText(telegramUserId, "ERROR: No user found for address " + userAddress);
@@ -178,24 +176,24 @@ public class TelegramBotService {
 
     public List<ChatMessageResponse> getRecentMessagesForUser(String userAddress) {
         List<ChatMessageResponse> messages = recentTelegramMessages.getOrDefault(userAddress, new ArrayList<>());
-        recentTelegramMessages.put(userAddress, new ArrayList<>()); // Clear after retrieving
+        recentTelegramMessages.put(userAddress, new ArrayList<>());
         return messages;
     }
 
-     public String findWalletIdByTelegramId(Long telegramUserId) {
-         for (Map.Entry<String, Long> entry : userAddressToTelegramId.entrySet()) {
-             if (entry.getValue().equals(telegramUserId)) {
-                 return entry.getKey();
-             }
-         }
+    public String findWalletIdByTelegramId(Long telegramUserId) {
+        for (Map.Entry<String, Long> entry : userAddressToTelegramId.entrySet()) {
+            if (entry.getValue().equals(telegramUserId)) {
+                return entry.getKey();
+            }
+        }
 
-         Optional<User> userOpt = userRepository.findByTelegramUserId(telegramUserId);
-         if (userOpt.isPresent()) {
-             String walletAddress = userOpt.get().getWallet().getAddress();
-             userAddressToTelegramId.put(walletAddress, telegramUserId);
-             return walletAddress;
-         }
+        Optional<User> userOpt = userRepository.findByTelegramUserId(telegramUserId);
+        if (userOpt.isPresent()) {
+            String walletAddress = userOpt.get().getWallet().getAddress();
+            userAddressToTelegramId.put(walletAddress, telegramUserId);
+            return walletAddress;
+        }
 
-         return null;
-     }
+        return null;
+    }
 }
