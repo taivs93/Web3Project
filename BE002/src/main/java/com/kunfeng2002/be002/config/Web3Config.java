@@ -20,7 +20,7 @@ public class Web3Config {
         return Web3j.build(new HttpService(ethereumRpc));
     }
 
-    @Bean("BSC")
+    @Bean("BSC-TESTNET")
     public Web3j web3Bsc() {
         return Web3j.build(new HttpService(bscRpc));
     }

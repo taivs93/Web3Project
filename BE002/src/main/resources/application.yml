@@ -9,10 +9,10 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.MySQL8Dialect
 
   kafka:
@@ -50,7 +50,7 @@ network:
   ethereum:
     rpc-url: https://mainnet.infura.io/v3/0b90cdfb635e4e35a7c28e11b7a83322
   bsc:
-    rpc-url: https://bsc-dataseed1.binance.org/
+    rpc-url: https://data-seed-prebsc-1-s1.binance.org:8545
   polygon:
     rpc-url: https://polygon-rpc.com/
   arbitrum:
@@ -59,3 +59,4 @@ network:
     rpc-url: https://mainnet.optimism.io/
   avalanche:
     rpc-url: https://api.avax.network/ext/bc/C/rpc
+
