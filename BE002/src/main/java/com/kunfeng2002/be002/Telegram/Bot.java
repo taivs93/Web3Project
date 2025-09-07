@@ -1,6 +1,7 @@
 package com.kunfeng2002.be002.Telegram;
 
 import com.kunfeng2002.be002.dto.response.ChatMessageResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -104,7 +105,7 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    public void sendText(Long who, String what) {
+    public void sendText(@NotNull Long who, String what) {
         SendMessage sm = SendMessage.builder()
                 .chatId(who.toString())
                 .text(what).build();

@@ -1,32 +1,29 @@
 package com.kunfeng2002.be002.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-@Table(name = "erc20")
 @Entity
+@Table(name = "ERC20")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Erc20 {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name_token")
+    @Column(name = "name_token", length = 45)
     private String nameToken;
 
-    @Column(name = "address")
+    @Column(name = "address", nullable = false, unique = true, length = 42)
     private String address;
 
-    @Column(name = "symbol")
+    @Column(name = "currency", nullable = false, columnDefinition = "TEXT")
     private String currency;
 
     @Column(name = "decimals")
-    private int types;
-
+    private Integer decimals;
 }

@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: web3-backend
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/web3_db
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: wallet-notifier
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+logging:
+  level:
+    com.kunfeng2002.be002: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+web3j:
+  client-address: http://localhost:8545
+  network-id: 1
+
+telegram:
+  bot:
+    username: buildweb3_bot
+    token: 8431553398:AAFZkRvL-DJPQboQplPnQVXNOYaoKZa4pxE
+
+network:
+  ethereum:
+    rpc-url: https://mainnet.infura.io/v3/0b90cdfb635e4e35a7c28e11b7a83322
+  bsc:
+    rpc-url: https://bsc-dataseed1.binance.org/
+  polygon:
+    rpc-url: https://polygon-rpc.com/
+  arbitrum:
+    rpc-url: https://arb1.arbitrum.io/rpc
+  optimism:
+    rpc-url: https://mainnet.optimism.io/
+  avalanche:
+    rpc-url: https://api.avax.network/ext/bc/C/rpc
