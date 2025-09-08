@@ -19,20 +19,28 @@ import com.kunfeng2002.be002.Telegram.Bot;
 import com.kunfeng2002.be002.Telegram.BotCommand;
 import com.kunfeng2002.be002.dto.response.ChatMessageResponse;
 import com.kunfeng2002.be002.entity.User;
+import com.kunfeng2002.be002.entity.TeleBot;
+import com.kunfeng2002.be002.exception.TelegramBotException;
 import com.kunfeng2002.be002.repository.UserRepository;
+import com.kunfeng2002.be002.repository.TeleBotRepository;
+import com.kunfeng2002.be002.service.FollowService;
 
 @Service
 public class TelegramBotService {
 
     private final Bot bot;
     private final UserRepository userRepository;
+    private final TeleBotRepository teleBotRepository;
+    private final FollowService followService;
     private final Map<String, Long> userAddressToTelegramIdCache = new HashMap<>();
 
     private final Map<String, List<ChatMessageResponse>> telegramToWebMessages = new HashMap<>();
 
-    public TelegramBotService(Bot bot, UserRepository userRepository) {
+    public TelegramBotService(Bot bot, UserRepository userRepository, TeleBotRepository teleBotRepository, FollowService followService) {
         this.bot = bot;
         this.userRepository = userRepository;
+        this.teleBotRepository = teleBotRepository;
+        this.followService = followService;
     }
 
     private void sendToTelegram(Long userId, String... messages) {
@@ -41,7 +49,7 @@ public class TelegramBotService {
                 bot.sendText(userId, msg);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send to Telegram: " + e.getMessage(), e);
+            throw new TelegramBotException("Failed to send to Telegram: " + e.getMessage(), e);
         }
     }
 
@@ -51,18 +59,18 @@ public class TelegramBotService {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(bot);
         } catch (TelegramApiException e) {
-            System.err.println("Telegram API Error: " + e.getMessage());
+            throw new TelegramBotException("Telegram API Error: " + e.getMessage(), e);
         } catch (Exception e) {
-            System.err.println("Failed to start Telegram Bot: " + e.getMessage());
+            throw new TelegramBotException("Failed to start Telegram Bot: " + e.getMessage(), e);
         }
     }
 
-    public String checkTeleLinkStatus(Long telegramUserId) {
-        Optional<User> userOpt = userRepository.findByTelegramUserId(telegramUserId);
+    public String checkTeleLinkStatus(String telegramId) {
+        Optional<User> userOpt = userRepository.findByTelegramId(telegramId);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             String walletAddress = user.getWallet().getAddress();
-            userAddressToTelegramIdCache.put(walletAddress, telegramUserId);
+            userAddressToTelegramIdCache.put(walletAddress, Long.parseLong(telegramId));
             return walletAddress;
         }
         return null;
@@ -149,8 +157,9 @@ public class TelegramBotService {
 
         Optional<User> userOpt = userRepository.findByWalletAddressQuery(userAddress);
         if (userOpt.isPresent()) {
-            Long telegramUserId = userOpt.get().getTelegramUserId();
-            if (telegramUserId != null) {
+            String telegramId = userOpt.get().getTeleBot().getIdTelegram();
+            if (telegramId != null && !telegramId.equals("unlinked")) {
+                Long telegramUserId = Long.parseLong(telegramId);
                 userAddressToTelegramIdCache.put(userAddress, telegramUserId);
                 return telegramUserId;
             }
@@ -185,20 +194,27 @@ public class TelegramBotService {
     @Transactional
     public void linkUserToTelegram(String userAddress, Long telegramUserId, String telegramUsername) {
         if (!isValidAddress(userAddress)) {
-            throw new IllegalArgumentException("Invalid Ethereum address: " + userAddress);
+            throw new TelegramBotException("Invalid Ethereum address: " + userAddress);
         }
 
-        Optional<User> userOpt = userRepository.findByWalletAddressQuery(userAddress);
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            user.setTelegramUserId(telegramUserId);
-            userRepository.save(user);
+        User user = userRepository.findByWalletAddressQuery(userAddress)
+                .orElseThrow(() -> new TelegramBotException("No user found for address " + userAddress));
+        
+        TeleBot teleBot = teleBotRepository.findByIdTelegram(telegramUserId.toString())
+                .orElseGet(() -> {
+                    TeleBot newTeleBot = new TeleBot(telegramUserId.toString());
+                    return teleBotRepository.save(newTeleBot);
+                });
+        
+        user.setTeleBot(teleBot);
+        userRepository.save(user);
 
-            userAddressToTelegramIdCache.put(userAddress, telegramUserId);
+        userAddressToTelegramIdCache.put(userAddress, telegramUserId);
 
+        try {
             bot.sendText(telegramUserId, "Successfully linked with address: " + userAddress + "\nYou can now chat with the bot!");
-        } else {
-            bot.sendText(telegramUserId, "ERROR: No user found for address " + userAddress + "\nPlease make sure you have registered this address in the web app first.");
+        } catch (Exception e) {
+            throw new TelegramBotException("Failed to send confirmation message: " + e.getMessage(), e);
         }
     }
 

@@ -15,8 +15,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class User {
 
-    public User(Wallet wallet){
+    public User(Wallet wallet, TeleBot teleBot){
         this.wallet = wallet;
+        this.teleBot = teleBot;
     }
 
     @Id
@@ -24,8 +25,12 @@ public class User {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_id", nullable = false)
+    @JoinColumn(name = "wallets_id", nullable = false)
     private Wallet wallet;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tele_bot_id", nullable = false)
+    private TeleBot teleBot;
 
     @Column(name = "username", unique = true, length = 100)
     private String username;
@@ -33,20 +38,11 @@ public class User {
     @Column(name = "email", unique = true, length = 255)
     private String email;
 
-    @Column(name = "telegram_user_id")
-    private Long telegramUserId;
-
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
-
-    @Column(name = "is_active")
-    private Boolean isActive = true;
-
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

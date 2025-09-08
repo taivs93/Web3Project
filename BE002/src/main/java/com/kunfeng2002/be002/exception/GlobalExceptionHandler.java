@@ -62,6 +62,36 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(FollowException.class)
+    public ResponseEntity<ResponseDTO> handleFollowException(FollowException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ResponseDTO.builder()
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .message(ex.getMessage())
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(InvalidWalletAddressException.class)
+    public ResponseEntity<ResponseDTO> handleInvalidWalletAddress(InvalidWalletAddressException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ResponseDTO.builder()
+                        .status(HttpStatus.BAD_REQUEST.value())
+                        .message(ex.getMessage())
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(TelegramBotException.class)
+    public ResponseEntity<ResponseDTO> handleTelegramBotException(TelegramBotException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                ResponseDTO.builder()
+                        .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                        .message(ex.getMessage())
+                        .build()
+        );
+    }
+
     @ExceptionHandler(SignatureException.class)
     public ResponseEntity<ResponseDTO> handleSignatureException(SignatureException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(

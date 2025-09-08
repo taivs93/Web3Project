@@ -4,10 +4,12 @@ import com.kunfeng2002.be002.dto.response.LoginResponse;
 import com.kunfeng2002.be002.dto.response.UserDto;
 import com.kunfeng2002.be002.entity.User;
 import com.kunfeng2002.be002.entity.Wallet;
+import com.kunfeng2002.be002.entity.TeleBot;
 import com.kunfeng2002.be002.exception.DataNotFoundException;
 import com.kunfeng2002.be002.exception.ResourceAlreadyExistException;
 import com.kunfeng2002.be002.repository.UserRepository;
 import com.kunfeng2002.be002.repository.WalletRepository;
+import com.kunfeng2002.be002.repository.TeleBotRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class AuthService {
     private final Web3Service web3Service;
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
+    private final TeleBotRepository teleBotRepository;
 
 
     @Transactional
@@ -70,7 +73,10 @@ public class AuthService {
             return existingUser.get();
         }
 
-        User newUser = new User(wallet);
+        TeleBot defaultTeleBot = new TeleBot("unlinked");
+        teleBotRepository.save(defaultTeleBot);
+
+        User newUser = new User(wallet, defaultTeleBot);
         return userRepository.save(newUser);
     }
 
@@ -134,10 +140,11 @@ public class AuthService {
                 .email(user.getEmail())
                 .avatarUrl(user.getAvatarUrl())
                 .bio(user.getBio())
-                .isActive(user.getIsActive())
-                .lastLoginAt(user.getLastLoginAt())
+                .isActive(true)
+                .lastLoginAt(null)
                 .createdAt(user.getCreatedAt())
                 .walletAddress(user.getWallet().getAddress())
+                .telegramUserId(user.getTeleBot() != null ? user.getTeleBot().getIdTelegram() : null)
                 .build();
     }
 

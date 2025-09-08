@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import com.kunfeng2002.be002.service.TelegramBotService;
+import com.kunfeng2002.be002.exception.TelegramBotException;
 import java.util.Optional;
 
 @Component
@@ -77,7 +78,7 @@ public class Bot extends TelegramLongPollingBot {
         try {
             execute(cm);
         } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
+            throw new TelegramBotException("Failed to copy message: " + e.getMessage(), e);
         }
     }
 
@@ -88,7 +89,7 @@ public class Bot extends TelegramLongPollingBot {
         try {
             execute(sm);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new TelegramBotException("Failed to send text message: " + e.getMessage(), e);
         }
     }
 
@@ -115,8 +116,8 @@ public class Bot extends TelegramLongPollingBot {
             case MENU -> sendText(telegramUserId, "Menu:\n\n" + BotCommand.getAllCommandsHelp());
             case SETTINGS -> sendText(telegramUserId, "Settings: Coming soon");
             case HISTORY -> sendText(telegramUserId, "Transaction History: Coming soon");
-            case FOLLOW -> sendText(telegramUserId, "Follow Wallet: Coming soon");
-            case UNFOLLOW -> sendText(telegramUserId, "Unfollow Wallet: Coming soon");
+            case FOLLOW -> handleFollowCommand(commandText, telegramUserId, telegramBotService);
+            case UNFOLLOW -> handleUnfollowCommand(commandText, telegramUserId, telegramBotService);
             case PRICE -> sendText(telegramUserId, "Token Prices: Coming soon");
             case BALANCE -> sendText(telegramUserId, "Balance Check: Coming soon");
             default -> sendText(telegramUserId, "Command not implemented yet.");
@@ -124,7 +125,7 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void handleStartCommand(Long telegramUserId, TelegramBotService telegramBotService) {
-        String linkAddress = telegramBotService.checkTeleLinkStatus(telegramUserId);
+        String linkAddress = telegramBotService.checkTeleLinkStatus(telegramUserId.toString());
         if (linkAddress != null) {
             sendText(telegramUserId, "Linked address: " + linkAddress + "\n\nWelcome! /help to see available commands.");
         } else {
@@ -142,11 +143,39 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void handleStatusCommand(Long telegramUserId, TelegramBotService telegramBotService) {
-        String linkAddress = telegramBotService.checkTeleLinkStatus(telegramUserId);
+        String linkAddress = telegramBotService.checkTeleLinkStatus(telegramUserId.toString());
         if (linkAddress != null) {
             sendText(telegramUserId, "Status: Connected\nAddress: " + linkAddress);
         } else {
             sendText(telegramUserId, "Status: Not connected\nPlease link your wallet first.");
+        }
+    }
+
+    private void handleFollowCommand(String commandText, Long telegramUserId, TelegramBotService telegramBotService) {
+        String walletAddress = commandText.substring(7).trim();
+        if (isValidAddress(walletAddress)) {
+            try {
+                telegramBotService.followService.follow(telegramUserId.toString(), walletAddress);
+                sendText(telegramUserId, "Successfully followed wallet: " + walletAddress);
+            } catch (Exception e) {
+                sendText(telegramUserId, "Failed to follow wallet: " + e.getMessage());
+            }
+        } else {
+            sendText(telegramUserId, "Invalid wallet address. Please use format: /follow 0x...");
+        }
+    }
+
+    private void handleUnfollowCommand(String commandText, Long telegramUserId, TelegramBotService telegramBotService) {
+        String walletAddress = commandText.substring(9).trim();
+        if (isValidAddress(walletAddress)) {
+            try {
+                telegramBotService.followService.unfollow(telegramUserId.toString(), walletAddress);
+                sendText(telegramUserId, "Successfully unfollowed wallet: " + walletAddress);
+            } catch (Exception e) {
+                sendText(telegramUserId, "Failed to unfollow wallet: " + e.getMessage());
+            }
+        } else {
+            sendText(telegramUserId, "Invalid wallet address. Please use format: /unfollow 0x...");
         }
     }
 
