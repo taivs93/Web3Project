@@ -1,9 +1,11 @@
 package com.kunfeng2002.be002.service;
 
-import com.kunfeng2002.be002.Telegram.Bot;
-import com.kunfeng2002.be002.dto.response.ChatMessageResponse;
-import com.kunfeng2002.be002.entity.User;
-import com.kunfeng2002.be002.repository.UserRepository;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -11,17 +13,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-
-import java.util.*;
-
 import static org.web3j.crypto.WalletUtils.isValidAddress;
+
+import com.kunfeng2002.be002.Telegram.Bot;
+import com.kunfeng2002.be002.Telegram.BotCommand;
+import com.kunfeng2002.be002.dto.response.ChatMessageResponse;
+import com.kunfeng2002.be002.entity.User;
+import com.kunfeng2002.be002.repository.UserRepository;
 
 @Service
 public class TelegramBotService {
 
     private final Bot bot;
     private final UserRepository userRepository;
-    private final Map<String, Long> userAddressToTelegramId = new HashMap<>();
+    private final Map<String, Long> userAddressToTelegramIdCache = new HashMap<>();
 
     private final Map<String, List<ChatMessageResponse>> telegramToWebMessages = new HashMap<>();
 
@@ -30,18 +35,37 @@ public class TelegramBotService {
         this.userRepository = userRepository;
     }
 
+    private void sendToTelegram(Long userId, String... messages) {
+        try {
+            for (String msg : messages) {
+                bot.sendText(userId, msg);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send to Telegram: " + e.getMessage(), e);
+        }
+    }
+
     @EventListener(ApplicationReadyEvent.class)
     public void startBot() {
         try {
-
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(bot);
-
         } catch (TelegramApiException e) {
             System.err.println("Telegram API Error: " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Failed to start Telegram Bot: " + e.getMessage());
         }
+    }
+
+    public String checkTeleLinkStatus(Long telegramUserId) {
+        Optional<User> userOpt = userRepository.findByTelegramUserId(telegramUserId);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            String walletAddress = user.getWallet().getAddress();
+            userAddressToTelegramIdCache.put(walletAddress, telegramUserId);
+            return walletAddress;
+        }
+        return null;
     }
 
     public ChatMessageResponse processWebChatMessage(String message, String userAddress, String sessionId) {
@@ -50,16 +74,11 @@ public class TelegramBotService {
         boolean sentToTelegram = false;
         String telegramMessageId = null;
 
-        if (userAddressToTelegramId.containsKey(userAddress)) {
-            Long telegramUserId = userAddressToTelegramId.get(userAddress);
-            try {
-                bot.sendText(telegramUserId, "Web Chat: " + message);
-                bot.sendText(telegramUserId, "Bot: " + botResponse);
-                sentToTelegram = true;
-                telegramMessageId = "sent_" + System.currentTimeMillis();
-           } catch (Exception e) {
-                System.err.println("Failed to send to  Telegram: " + e.getMessage());
-            }
+        Long telegramUserId = getTelegramUserIdByAddress(userAddress);
+        if (telegramUserId != null) {
+            sendToTelegram(telegramUserId, "Web Chat: " + message, "Bot: " + botResponse);
+            sentToTelegram = true;
+            telegramMessageId = "sent_" + System.currentTimeMillis();
         }
 
         return ChatMessageResponse.builder()
@@ -79,16 +98,14 @@ public class TelegramBotService {
         boolean sentToTelegram = false;
         String telegramMessageId = null;
 
-        if (userAddressToTelegramId.containsKey(userAddress)) {
-            Long telegramUserId = userAddressToTelegramId.get(userAddress);
-            try {
-                bot.sendText(telegramUserId, "Web: " + message);
-                bot.sendText(telegramUserId, "Bot: " + botResponse);
-                sentToTelegram = true;
-                telegramMessageId = "sent_" + System.currentTimeMillis();
-            } catch (Exception e) {
-                System.err.println("Failed to send to Telegram: " + e.getMessage());
-            }
+        Long telegramUserId = getTelegramUserIdByAddress(userAddress);
+        if (telegramUserId != null) {
+            sendToTelegram(telegramUserId, "Web: " + message, "Bot: " + botResponse);
+            sentToTelegram = true;
+            telegramMessageId = "sent_" + System.currentTimeMillis();
+
+            storeTelegramMessage(userAddress, "Web: " + message, true);
+            storeTelegramMessage(userAddress, "Bot: " + botResponse, false);
         }
 
         return ChatMessageResponse.builder()
@@ -102,17 +119,44 @@ public class TelegramBotService {
                 .build();
     }
 
-    private String generateBotResponse(String userText) {
+    public String generateBotResponse(String userText) {
         String text = userText.toLowerCase();
 
-        if (text.contains("/help")) {
-            return "Call help";
+        if (BotCommand.isCommand(userText)) {
+            Optional<BotCommand> commandOpt = BotCommand.fromText(userText);
+            if (commandOpt.isPresent()) {
+                BotCommand command = commandOpt.get();
+                return generateCommandResponse(command);
+            }
+        }
+        return "Re Send <- OR -> /help to view all command";
+    }
+
+    private String generateCommandResponse(BotCommand command) {
+        return switch (command) {
+            case HELP -> BotCommand.getAllCommandsHelp();
+            case STATUS -> "Trạng thái: Bot bình thường!";
+            case START -> "Chào! Tôi là KunFeng2002's Bot. /help to view all command";
+            case MENU -> "Menu:\n\n" + BotCommand.getAllCommandsHelp();
+            default -> "đang laod: " + command.getDescription();
+        };
+    }
+
+    public Long getTelegramUserIdByAddress(String userAddress) {
+        if (userAddressToTelegramIdCache.containsKey(userAddress)) {
+            return userAddressToTelegramIdCache.get(userAddress);
         }
 
-        if (text.contains("/status")) {
-            return "Call status";
+        Optional<User> userOpt = userRepository.findByWalletAddressQuery(userAddress);
+        if (userOpt.isPresent()) {
+            Long telegramUserId = userOpt.get().getTelegramUserId();
+            if (telegramUserId != null) {
+                userAddressToTelegramIdCache.put(userAddress, telegramUserId);
+                return telegramUserId;
+            }
         }
-        return "Re Send!";
+
+        return null;
     }
 
     public List<ChatMessageResponse> getTelegramMessages(String userAddress) {
@@ -122,11 +166,19 @@ public class TelegramBotService {
     }
 
     public String findUserAddressByTelegramId(Long telegramUserId) {
-        for (Map.Entry<String, Long> entry : userAddressToTelegramId.entrySet()) {
+        for (Map.Entry<String, Long> entry : userAddressToTelegramIdCache.entrySet()) {
             if (entry.getValue().equals(telegramUserId)) {
                 return entry.getKey();
             }
         }
+
+        Optional<User> userOpt = userRepository.findByTelegramUserId(telegramUserId);
+        if (userOpt.isPresent()) {
+            String walletAddress = userOpt.get().getWallet().getAddress();
+            userAddressToTelegramIdCache.put(walletAddress, telegramUserId);
+            return walletAddress;
+        }
+
         return null;
     }
 
@@ -135,7 +187,6 @@ public class TelegramBotService {
         if (!isValidAddress(userAddress)) {
             throw new IllegalArgumentException("Invalid Ethereum address: " + userAddress);
         }
-        userAddressToTelegramId.put(userAddress, telegramUserId);
 
         Optional<User> userOpt = userRepository.findByWalletAddressQuery(userAddress);
         if (userOpt.isPresent()) {
@@ -143,13 +194,15 @@ public class TelegramBotService {
             user.setTelegramUserId(telegramUserId);
             userRepository.save(user);
 
-            bot.sendText(telegramUserId, "Linked address: " + userAddress);
+            userAddressToTelegramIdCache.put(userAddress, telegramUserId);
+
+            bot.sendText(telegramUserId, "Successfully linked with address: " + userAddress + "\nYou can now chat with the bot!");
         } else {
-            bot.sendText(telegramUserId, "ERROR: No user found for address " + userAddress);
+            bot.sendText(telegramUserId, "ERROR: No user found for address " + userAddress + "\nPlease make sure you have registered this address in the web app first.");
         }
     }
 
-    private Map<String, List<ChatMessageResponse>> recentTelegramMessages = new HashMap<>();
+    private final Map<String, List<ChatMessageResponse>> recentTelegramMessages = new HashMap<>();
 
     public void storeTelegramMessage(String userAddress, String message, boolean isFromUser) {
         if (!recentTelegramMessages.containsKey(userAddress)) {
@@ -177,11 +230,15 @@ public class TelegramBotService {
     public List<ChatMessageResponse> getRecentMessagesForUser(String userAddress) {
         List<ChatMessageResponse> messages = recentTelegramMessages.getOrDefault(userAddress, new ArrayList<>());
         recentTelegramMessages.put(userAddress, new ArrayList<>());
-        return messages;
+        return new ArrayList<>(messages);
+    }
+
+    public void clearMessagesForUser(String userAddress) {
+        recentTelegramMessages.put(userAddress, new ArrayList<>());
     }
 
     public String findWalletIdByTelegramId(Long telegramUserId) {
-        for (Map.Entry<String, Long> entry : userAddressToTelegramId.entrySet()) {
+        for (Map.Entry<String, Long> entry : userAddressToTelegramIdCache.entrySet()) {
             if (entry.getValue().equals(telegramUserId)) {
                 return entry.getKey();
             }
@@ -190,10 +247,11 @@ public class TelegramBotService {
         Optional<User> userOpt = userRepository.findByTelegramUserId(telegramUserId);
         if (userOpt.isPresent()) {
             String walletAddress = userOpt.get().getWallet().getAddress();
-            userAddressToTelegramId.put(walletAddress, telegramUserId);
+            userAddressToTelegramIdCache.put(walletAddress, telegramUserId);
             return walletAddress;
         }
 
         return null;
     }
+
 }

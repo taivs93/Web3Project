@@ -16,6 +16,9 @@ public class UserDto {
     private String username;
     private String email;
 
+    @JsonProperty("telegramUserId")
+    private Long telegramUserId;
+
     @JsonProperty("avatar_url")
     private String avatarUrl;
     private String bio;
