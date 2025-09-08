@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ethers } from 'ethers'
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8080/api'
+const API_BASE_URL = 'http://localhost:8080'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -105,6 +105,10 @@ export const useAuthStore = defineStore('auth', {
           this.user = response.data.data.user
           this.walletAddress = response.data.data.walletAddress || this.walletAddress
           this.isConnected = true
+
+          // Debug log để kiểm tra dữ liệu
+          console.log('Login response data:', response.data.data)
+          console.log('User data:', this.user)
         }
 
         return response.data.data
@@ -138,6 +142,10 @@ export const useAuthStore = defineStore('auth', {
         // Backend trả về ResponseDTO với structure: { status, message, data }
         if (response.data && response.data.data) {
           this.user = response.data.data
+
+          // Debug log để kiểm tra dữ liệu
+          console.log('Profile response data:', response.data.data)
+          console.log('User data after profile update:', this.user)
         }
 
         return response.data.data
@@ -165,6 +173,10 @@ export const useAuthStore = defineStore('auth', {
         // Backend trả về ResponseDTO với structure: { status, message, data }
         if (response.data && response.data.data) {
           this.user = response.data.data
+
+          // Debug log để kiểm tra dữ liệu
+          console.log('Update profile response data:', response.data.data)
+          console.log('User data after update:', this.user)
         }
 
         return response.data.data
@@ -176,6 +188,26 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // Token methods removed - not available in backend
+    async refreshUser() {
+      try {
+        if (!this.walletAddress) {
+          throw new Error('Chưa kết nối ví!')
+        }
+
+        const response = await axios.post(`${API_BASE_URL}/chat/refresh-user`, null, {
+          params: { userAddress: this.walletAddress }
+        })
+
+        if (response.data && response.data.data) {
+          this.user = response.data.data
+          console.log('User refreshed:', this.user)
+        }
+
+        return response.data.data
+      } catch (error) {
+        this.error = error.response?.data?.message || error.message
+        throw error
+      }
+    },
   }
 })

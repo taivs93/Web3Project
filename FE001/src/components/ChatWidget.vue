@@ -142,7 +142,7 @@ import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8080/api'
+const API_BASE_URL = 'http://localhost:8080'
 const authStore = useAuthStore()
 
 const getUserAddress = () => {
@@ -191,10 +191,11 @@ const goToTelegram = () => {
   scrollToBottom()
 }
 
+
 const fetchTelegramMessages = async () => {
   try {
     const userAddress = getUserAddress()
-    const response = await axios.get(`${API_BASE_URL}/api/chat/messages`, {
+    const response = await axios.get(`${API_BASE_URL}/chat/messages`, {
       params: { userAddress }
     })
     
@@ -257,7 +258,7 @@ const toggleBotMenu = () => {
 
 const sendMessageToBackend = async (message, userAddress) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/chat/send`, {
+    const response = await axios.post(`${API_BASE_URL}/chat/send`, {
       message: message,
       userAddress: userAddress,
       chatId: `web_session_${Date.now()}`
@@ -320,21 +321,21 @@ const getBotResponse = (userText) => {
   const text = userText.toLowerCase()
   
   if (text.includes('/help')) {
-    return '📋 Các lệnh có sẵn:\n/help - Trợ giúp\n/status - Trạng thái hệ thống\n/info - Thông tin\n\nBạn cũng có thể hỏi về đăng nhập, ví, hoặc các vấn đề kỹ thuật!'
+    return 'Các lệnh có sẵn:\n/help - Trợ giúp\n/status - Trạng thái hệ thống\n/info - Thông tin\n\nBạn cũng có thể hỏi về đăng nhập, ví, hoặc các vấn đề kỹ thuật!'
   } else if (text.includes('/status')) {
-    return '✅ Hệ thống đang hoạt động bình thường!\n🔗 Backend: Kết nối thành công\n🌐 Frontend: Đang chạy\n⏰ ' + new Date().toLocaleString('vi-VN')
+    return 'Hệ thống đang hoạt động bình thường!\nBackend: Kết nối thành công\nFrontend: Đang chạy\n' + new Date().toLocaleString('vi-VN')
   } else if (text.includes('/info')) {
-    return 'ℹ️ Web3 Authentication System\n🔐 Spring Boot + Ethereum\n📱 Vue.js Frontend\n🤖 Telegram Bot Integration\n\nHệ thống xác thực phi tập trung sử dụng chữ ký MetaMask!'
+    return 'Web3 Authentication System\nSpring Boot + Ethereum\nVue.js Frontend\nTelegram Bot Integration\n\nHệ thống xác thực phi tập trung sử dụng chữ ký MetaMask!'
   } else if (text.includes('đăng nhập') || text.includes('login')) {
-    return '🔐 Hỗ trợ đăng nhập:\n\n1. Đảm bảo MetaMask đã cài đặt\n2. Kết nối ví\n3. Ký thông điệp xác thực\n4. Hoàn tất đăng nhập\n\nBạn gặp lỗi ở bước nào?'
+    return 'Hỗ trợ đăng nhập:\n\n1. Đảm bảo MetaMask đã cài đặt\n2. Kết nối ví\n3. Ký thông điệp xác thực\n4. Hoàn tất đăng nhập\n\nBạn gặp lỗi ở bước nào?'
   } else if (text.includes('metamask') || text.includes('ví')) {
-    return '🦊 MetaMask Support:\n\n- Tải MetaMask: https://metamask.io\n- Tạo ví mới hoặc import\n- Kết nối với ứng dụng\n- Ký thông điệp để xác thực\n\nCần hỗ trợ cụ thể gì về ví?'
+    return 'MetaMask Support:\n\n- Tải MetaMask: https://metamask.io\n- Tạo ví mới hoặc import\n- Kết nối với ứng dụng\n- Ký thông điệp để xác thực\n\nCần hỗ trợ cụ thể gì về ví?'
   } else if (text.includes('lỗi') || text.includes('error')) {
-    return '❌ Hỗ trợ lỗi:\n\n• Lỗi kết nối ví\n• Lỗi chữ ký\n• Lỗi mạng\n• Lỗi server\n\nVui lòng mô tả chi tiết lỗi bạn gặp phải!'
+    return 'Hỗ trợ lỗi:\n\n• Lỗi kết nối ví\n• Lỗi chữ ký\n• Lỗi mạng\n• Lỗi server\n\nVui lòng mô tả chi tiết lỗi bạn gặp phải!'
   } else if (text.includes('cảm ơn') || text.includes('thanks')) {
-    return '😊 Rất vui được hỗ trợ bạn! Nếu có thêm câu hỏi, đừng ngần ngại nhé!'
+    return 'Rất vui được hỗ trợ bạn! Nếu có thêm câu hỏi, đừng ngần ngại nhé!'
   } else {
-    return '🤔 Tôi hiểu bạn đang hỏi về: "' + userText + '"\n\nRe Send!'
+    return 'Tôi hiểu bạn đang hỏi về: "' + userText + '"\n\nRe Send!'
   }
 }
 

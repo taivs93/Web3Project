@@ -8,12 +8,39 @@
             <h1 class="text-xl font-bold text-gray-900">Web3 Auth App</h1>
           </div>
           <div class="flex items-center space-x-4">
-            <router-link
-              to="/login"
-              class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
-            >
-              Đăng nhập
-            </router-link>
+            <!-- Hiển thị thông tin user nếu đã đăng nhập -->
+            <div v-if="authStore.isAuthenticated" class="flex items-center space-x-4">
+              <div class="text-sm text-gray-700">
+                <span class="font-medium">{{ authStore.user?.username || 'User' }}</span>
+                <span class="text-gray-500 ml-2">({{ authStore.shortAddress }})</span>
+                <span v-if="authStore.user?.telegramUserId" class="ml-2 text-blue-600">
+                  <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16c-.169 1.858-.896 6.728-.896 6.728-.302 1.408-1.125 1.653-2.29 1.027L11.45 14.05l-1.347 1.297c-.149.149-.275.275-.562.275l.2-2.831 5.154-4.653c.224-.2-.049-.312-.347-.112L7.862 12.32l-2.76-.918c-.6-.186-.612-.6.126-.889L20.11 7.19c.498-.184.936.112.778.889z"/>
+                  </svg>
+                </span>
+              </div>
+              <router-link
+                to="/profile"
+                class="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+              >
+                Hồ sơ
+              </router-link>
+              <button
+                @click="handleLogout"
+                class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
+              >
+                Đăng xuất
+              </button>
+            </div>
+            <!-- Hiển thị nút đăng nhập nếu chưa đăng nhập -->
+            <div v-else>
+              <router-link
+                to="/login"
+                class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors"
+              >
+                Đăng nhập
+              </router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -21,7 +48,8 @@
 
     <!-- Hero Section -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div class="text-center">
+      <!-- Nội dung cho người dùng chưa đăng nhập -->
+      <div v-if="!authStore.isAuthenticated" class="text-center">
         <h1 class="text-4xl font-bold text-gray-900 mb-6">
           Chào mừng đến với Web3 Authentication
         </h1>
@@ -36,6 +64,31 @@
           >
             Bắt đầu ngay
           </router-link>
+        </div>
+      </div>
+
+      <!-- Nội dung cho người dùng đã đăng nhập -->
+      <div v-else class="text-center">
+        <h1 class="text-4xl font-bold text-gray-900 mb-6">
+          Chào mừng trở lại, {{ authStore.user?.username || 'User' }}!
+        </h1>
+        <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          Bạn đã đăng nhập thành công với địa chỉ ví: {{ authStore.walletAddress }}
+        </p>
+        
+        <div class="flex justify-center space-x-4">
+          <router-link
+            to="/profile"
+            class="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Quản lý hồ sơ
+          </router-link>
+          <button
+            @click="openChat"
+            class="bg-green-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-green-700 transition-colors"
+          >
+            Mở chat hỗ trợ
+          </button>
         </div>
       </div>
 
@@ -162,20 +215,35 @@
       </div>
     </div>
 
-    <!-- Chat Widget only shows when authenticated -->
+    <!-- Chat Widget chỉ hiển thị khi đã đăng nhập -->
+    <ChatWidget v-if="authStore.isAuthenticated" ref="chatWidget" />
+    
+    <!-- Debug component -->
+    <DebugInfo />
   </div>
 </template>
 
 <script setup>
-// No imports needed for unauthenticated home page
+import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import ChatWidget from '@/components/ChatWidget.vue'
+import DebugInfo from '@/components/DebugInfo.vue'
 
-// const openTelegramChat = () => {
-//   // Mở Telegram bot
-//   const botUsername = 'buildweb3_bot'
-//   const telegramUrl = `https://t.me/${botUsername}`
-//   window.open(telegramUrl, '_blank')
-//   
-//   // Hiển thị thông báo
-//   alert('🤖 Đang mở Telegram Bot!\n\nGửi /start để bắt đầu trò chuyện với bot support.')
-// }
+const authStore = useAuthStore()
+const chatWidget = ref(null)
+
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+    // Có thể thêm thông báo thành công ở đây
+  } catch (error) {
+    console.error('Logout error:', error)
+  }
+}
+
+const openChat = () => {
+  if (chatWidget.value) {
+    chatWidget.value.toggleChat()
+  }
+}
 </script>
